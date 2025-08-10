@@ -1,5 +1,9 @@
+[build]
+  command = "node scripts/fetch-gold.mjs"
+  publish = "."
+
 [functions]
   directory = "netlify/functions"
 
-[functions."update-gold"]
-  schedule = "0 5,12,20 * * *"
+[functions."trigger-build"]
+  schedule = "0 5,12,20 * * *" # ثلاث مرات يوميًا (UTC)

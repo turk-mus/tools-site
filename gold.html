@@ -66,7 +66,7 @@
   <div id="gold-tables">جارٍ تحميل الأسعار...</div>
 
   <div class="footer">
-    المصدر: <code>/.netlify/functions/gold-live</code> |
+    المصدر: <code>gold.json</code> |
     آخر تحديث: <span id="update-time">...</span>
   </div>
 
@@ -79,8 +79,8 @@
 
     async function fetchGoldPrices() {
       try {
-        // جلب مباشر من الدالة التي تقرأ من Blobs (يُحدَّث 3 مرات يوميًا)
-        const response = await fetch("/.netlify/functions/gold-live", { cache: 'no-cache' });
+        // ✅ قراءة من gold.json المُولّد أثناء الـ Deploy + كسر الكاش
+        const response = await fetch("gold.json?ts=" + Date.now(), { cache: 'no-cache' });
         if (!response.ok) throw new Error('HTTP ' + response.status);
 
         const data = await response.json();
@@ -118,7 +118,7 @@
 
         document.getElementById("gold-tables").innerHTML = table1 + table2;
 
-        // وقت آخر تحديث حسب الدالة (UTC→يعرض حسب توقيت جهاز الزائر)
+        // عرض وقت آخر تحديث كما هو مخزّن داخل gold.json (يُعرَض بتوقيت جهاز الزائر)
         document.getElementById("update-time").textContent =
           updatedAt.toLocaleString("ar-EG", { hour12: false });
 
