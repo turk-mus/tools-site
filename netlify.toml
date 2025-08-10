@@ -1,0 +1,5 @@
+[functions]
+  directory = "netlify/functions"
+
+[functions."update-gold"]
+  schedule = "0 5,12,20 * * *"

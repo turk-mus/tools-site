@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>أسعار الوقود في السعودية | تحديث شهري</title>
+  <meta name="description" content="تعرف على أسعار البنزين والديزل في السعودية حسب التحديث الشهري من أرامكو. الأسعار محدثة شهريًا مع معلومات دقيقة.">
+  <meta name="keywords" content="أسعار الوقود, سعر البنزين, بنزين 91, بنزين 95, ديزل, أرامكو السعودية, الوقود في السعودية">
+  <style>
+    body {
+      font-family: 'Tajawal', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f4f4f4;
+      color: #333;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .dark-mode {
+      background-color: #121212;
+      color: #eee;
+    }
+
+    h1 {
+      text-align: center;
+      color: #c0392b;
+    }
+
+    .dark-mode h1 {
+      color: #f1948a;
+    }
+
+    p.description {
+      text-align: center;
+      font-size: 18px;
+      margin-bottom: 30px;
+    }
+
+    table {
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+    }
+
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: center;
+    }
+
+    table th {
+      background-color: #c0392b;
+      color: #fff;
+    }
+
+    .dark-mode table th {
+      background-color: #922b21;
+    }
+
+    .dark-mode table td {
+      background-color: #1c1c1c;
+    }
+
+    .toggle-btn, .home-btn {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      background: #c0392b;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 15px;
+      cursor: pointer;
+      font-size: 14px;
+      z-index: 1000;
+      margin-right: 10px;
+    }
+
+    .home-btn {
+      left: auto;
+      right: 15px;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 13px;
+      margin-top: 20px;
+      color: #888;
+    }
+
+    @media (max-width: 600px) {
+      table th, table td {
+        font-size: 14px;
+        padding: 8px;
+      }
+    }
+  </style>
+  <!-- Google tag (gtag.js) -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-D8W8C8PYS9');
+</script>
+
+
+</head>
+<body>
+  <button class="toggle-btn" onclick="toggleDarkMode()">🌓 وضع ليلي</button>
+  <button class="home-btn" onclick="location.href='home.html'">🏠 الصفحة الرئيسية</button>
+
+  <h1>⛽ أسعار الوقود في السعودية</h1>
+  <p class="description">تحديث شهري حسب إعلان شركة أرامكو. الأسعار أدناه سارية من <strong>10 أغسطس 2025</strong> حتى إشعار آخر.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>نوع الوقود</th>
+        <th>السعر (ريال/لتر)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>بنزين 91</td><td>2.18</td></tr>
+      <tr><td>بنزين 95</td><td>2.33</td></tr>
+      <tr><td>ديزل</td><td>0.75</td></tr>
+      <tr><td>كيروسين</td><td>0.70</td></tr>
+      <tr><td>غاز البترول المسال</td><td>0.75</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    المصدر: <a href="https://www.saudiaramco.com" target="_blank">شركة أرامكو السعودية</a> | تاريخ التحديث: <strong>10 أغسطس 2025</strong>
+  </div>
+
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+  </script>
+</body>
+</html>

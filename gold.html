@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>أسعار الذهب في السعودية | تحديث يومي</title>
+  <meta name="description" content="تعرف على أسعار الذهب اليوم في السعودية لجميع العيارات والأوزان، بما في ذلك سعر الغرام والأونصة والسبائك، مع تحديث تلقائي يومي.">
+  <meta name="keywords" content="سعر الذهب, أسعار الذهب, سبائك ذهب, عيار 24, عيار 21, عيار 18, السعودية">
+
+  <!-- Google Analytics (لا يتم حذفه) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D8W8C8PYS9');
+  </script>
+
+  <style>
+    body {
+      font-family: 'Tajawal', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f4f4f4;
+      color: #333;
+      transition: background 0.3s, color 0.3s;
+    }
+    .dark-mode { background-color: #121212; color: #eee; }
+    h1 { text-align: center; color: #006c35; }
+    .dark-mode h1 { color: #6ef19d; }
+    p.description { text-align: center; font-size: 18px; margin-bottom: 20px; }
+
+    .actions { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+    button {
+      background: #006c35; color: white; border: none; border-radius: 20px;
+      padding: 8px 15px; cursor: pointer; font-size: 14px;
+    }
+
+    table { width: 100%; max-width: 800px; margin: auto; border-collapse: collapse; margin-bottom: 40px; }
+    table th, table td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    table th { background-color: #006c35; color: #fff; }
+    .dark-mode table th { background-color: #1f4033; }
+    .dark-mode table td { background-color: #1c1c1c; }
+
+    .footer { text-align: center; font-size: 13px; margin-top: 20px; color: #888; }
+    .home-btn {
+      position: fixed; top: 15px; right: 15px; background: #006c35; color: white;
+      text-decoration: none; padding: 8px 15px; border-radius: 20px; font-size: 14px;
+      z-index: 1000; transition: background 0.3s;
+    }
+    .home-btn:hover { background: #008f4c; }
+  </style>
+</head>
+<body>
+  <button style="position: fixed; top: 15px; left: 15px;" onclick="toggleDarkMode()">🌓 وضع ليلي</button>
+  <a href="home.html" class="home-btn">🏠 الصفحة الرئيسية</a>
+
+  <h1>💰 سعر الذهب اليوم في السعودية</h1>
+  <p class="description">تحديث تلقائي لأسعار الذهب لكل العيارات والسبائك حسب السوق العالمي، مع التحويل للريال السعودي.</p>
+
+  <div class="actions">
+    <button onclick="shareData()">🔗 مشاركة</button>
+    <button onclick="downloadCSV()">📥 تنزيل ملف</button>
+  </div>
+
+  <div id="gold-tables">جارٍ تحميل الأسعار...</div>
+
+  <div class="footer">
+    المصدر: <code>/.netlify/functions/gold-live</code> |
+    آخر تحديث: <span id="update-time">...</span>
+  </div>
+
+  <script>
+    let csvContent = "النوع,السعر/غرام,السعر/أونصة\n";
+
+    function formatNum(num) {
+      return Number(num).toLocaleString("ar-EG", { maximumFractionDigits: 2 });
+    }
+
+    async function fetchGoldPrices() {
+      try {
+        // جلب مباشر من الدالة التي تقرأ من Blobs (يُحدَّث 3 مرات يوميًا)
+        const response = await fetch("/.netlify/functions/gold-live", { cache: 'no-cache' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+
+        const data = await response.json();
+        const updatedAt = new Date(data.last_updated);
+        const grams = data.grams || {};
+        const pricePerOunceSar = data.price_ounce_sar;
+
+        // جدول العيارات
+        const karats = [
+          { name: "عيار 24", key: "24" },
+          { name: "عيار 22", key: "22" },
+          { name: "عيار 21", key: "21" },
+          { name: "عيار 18", key: "18" },
+          { name: "عيار 14", key: "14" }
+        ];
+
+        csvContent = "النوع,السعر/غرام,السعر/أونصة\n";
+        let table1 = `<table><thead><tr><th>العيار</th><th>السعر/غرام</th><th>السعر/أونصة</th></tr></thead><tbody>`;
+        karats.forEach(k => {
+          const gram = grams[k.key];
+          const ounce = pricePerOunceSar * (parseInt(k.key,10) / 24);
+          table1 += `<tr><td>${k.name}</td><td>${formatNum(gram)} ريال</td><td>${formatNum(ounce)} ريال</td></tr>`;
+          csvContent += `${k.name},${Number(gram).toFixed(2)},${Number(ounce).toFixed(2)}\n`;
+        });
+        table1 += `</tbody></table>`;
+
+        // جدول السبائك (عيار 24)
+        let table2 = `<table><thead><tr><th>وزن السبيكة</th><th>سعر السبيكة (عيار 24)</th></tr></thead><tbody>`;
+        [1, 5, 10, 20, 50, 100, 1000].forEach(weight => {
+          const total = (grams["24"] || 0) * weight;
+          table2 += `<tr><td>${weight} غرام</td><td>${formatNum(total)} ريال</td></tr>`;
+          csvContent += `سبيكة ${weight} غرام,${Number(total).toFixed(2)},-\n`;
+        });
+        table2 += `</tbody></table>`;
+
+        document.getElementById("gold-tables").innerHTML = table1 + table2;
+
+        // وقت آخر تحديث حسب الدالة (UTC→يعرض حسب توقيت جهاز الزائر)
+        document.getElementById("update-time").textContent =
+          updatedAt.toLocaleString("ar-EG", { hour12: false });
+
+      } catch (err) {
+        document.getElementById("gold-tables").innerHTML = "حدث خطأ أثناء تحميل الأسعار.";
+        document.getElementById("update-time").textContent = '—';
+        console.error(err);
+      }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    function downloadCSV() {
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "أسعار الذهب السعودية.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function shareData() {
+      if (navigator.share) {
+        navigator.share({
+          title: "أسعار الذهب في السعودية",
+          text: "اطلع على أسعار الذهب اليوم في السعودية.",
+          url: window.location.href
+        });
+      } else {
+        alert("ميزة المشاركة غير مدعومة على هذا المتصفح.");
+      }
+    }
+
+    // التحميل الأول
+    fetchGoldPrices();
+  </script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>حاسبة ضريبة القيمة المضافة</title>
+  <meta name="description" content="احسب أو استخرج ضريبة القيمة المضافة بنسبة 15% حسب النظام السعودي.">
+  <meta name="keywords" content="ضريبة القيمة المضافة, حاسبة الضريبة, السعودية, VAT, 15%">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Tajawal', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+      color: #333;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .dark-mode {
+      background-color: #222;
+      color: #eee;
+    }
+
+    header {
+      background: #006c35;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 24px;
+    }
+
+    .top-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 15px 0;
+    }
+
+    .top-buttons button {
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #006c35;
+      color: white;
+    }
+
+    .top-buttons button:hover {
+      background-color: #004f27;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .dark-mode .container {
+      background: #333;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    button.calc-btn {
+      background-color: #006c35;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    button.calc-btn:hover {
+      background-color: #004f27;
+    }
+
+    .result {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 14px;
+      color: #777;
+    }
+  </style>
+  <!-- Google tag (gtag.js) -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-D8W8C8PYS9');
+</script>
+
+
+</head>
+<body>
+
+  <header>🧾 حاسبة ضريبة القيمة المضافة</header>
+
+  <div class="top-buttons">
+    <button onclick="goHome()">🏠 الصفحة الرئيسية</button>
+    <button onclick="toggleDarkMode()">🌙 الوضع الليلي</button>
+  </div>
+
+  <div class="container">
+    <div class="form-group">
+      <label for="mode">طريقة الحساب:</label>
+      <select id="mode">
+        <option value="add">إضافة الضريبة (15%)</option>
+        <option value="remove">إزالة الضريبة (من مبلغ شامل)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="amount">المبلغ:</label>
+      <input type="number" id="amount" placeholder="أدخل المبلغ">
+    </div>
+
+    <button class="calc-btn" onclick="calculateVAT()">🧾 احسب</button>
+
+    <div class="result" id="result">-</div>
+
+    <div class="footer">
+      الضريبة الحالية: 15% حسب هيئة الزكاة والضريبة والجمارك
+    </div>
+  </div>
+
+  <script>
+    function goHome() {
+      window.location.href = "home.html";
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+
+    function calculateVAT() {
+      const amount = parseFloat(document.getElementById("amount").value || 0);
+      const mode = document.getElementById("mode").value;
+      const vatRate = 0.15;
+      let vat = 0;
+      let result = "";
+
+      if (mode === "add") {
+        vat = amount * vatRate;
+        const total = amount + vat;
+        result = `💰 الضريبة: ${vat.toFixed(2)} ريال | الإجمالي: ${total.toFixed(2)} ريال`;
+      } else {
+        const base = amount / (1 + vatRate);
+        vat = amount - base;
+        result = `💸 الضريبة: ${vat.toFixed(2)} ريال | الصافي: ${base.toFixed(2)} ريال`;
+      }
+
+      document.getElementById("result").textContent = result;
+    }
+  </script>
+
+</body>
+</html>

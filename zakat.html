@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>حاسبة الزكاة</title>
+  <meta name="description" content="احسب زكاة مالك أو ذهبك بسهولة حسب المعايير الشرعية، مع تحديث تلقائي لسعر الذهب.">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Tajawal', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+      color: #333;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark {
+      background: #121212;
+      color: #f1f1f1;
+    }
+
+    header {
+      background: #006c35;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 24px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    body.dark .container {
+      background: #1e1e1e;
+      box-shadow: 0 0 10px rgba(255,255,255,0.05);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white;
+      color: #000;
+    }
+
+    body.dark select,
+    body.dark input {
+      background: #2c2c2c;
+      color: white;
+      border: 1px solid #666;
+    }
+
+    button {
+      background-color: #006c35;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    button:hover {
+      background-color: #004f27;
+    }
+
+    .result {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 14px;
+      color: #777;
+    }
+
+    .top-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+  </style>
+
+  <!-- Google tag -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D8W8C8PYS9');
+  </script>
+</head>
+
+<body>
+  <header>📊 حاسبة الزكاة</header>
+
+  <div class="container">
+
+    <div class="top-buttons">
+      <button onclick="goHome()">🏠 الرئيسية</button>
+      <button onclick="toggleDarkMode()">🌓 الوضع الليلي</button>
+    </div>
+
+    <div class="form-group">
+      <label for="type">نوع الزكاة:</label>
+      <select id="type" onchange="toggleFields()">
+        <option value="money">زكاة المال</option>
+        <option value="gold">زكاة الذهب</option>
+      </select>
+    </div>
+
+    <div id="money-fields" class="form-group">
+      <label for="money">قيمة المال (بالريال):</label>
+      <input type="number" id="money" placeholder="أدخل المبلغ">
+    </div>
+
+    <div id="gold-fields" style="display:none">
+      <div class="form-group">
+        <label for="gold-weight">وزن الذهب (غرام):</label>
+        <input type="number" id="gold-weight" placeholder="مثال: 85">
+      </div>
+
+      <div class="form-group">
+        <label for="gold-karat">عيار الذهب:</label>
+        <select id="gold-karat" onchange="updateAdjustedPrice()">
+          <option value="1">عيار 24</option>
+          <option value="0.916">عيار 22</option>
+          <option value="0.875">عيار 21</option>
+          <option value="0.75">عيار 18</option>
+          <option value="0.585">عيار 14</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="gold-price">سعر غرام الذهب (عيار مختار):</label>
+        <input type="number" id="gold-price" placeholder="يتم التحديث تلقائيًا..." data-base="0">
+      </div>
+    </div>
+
+    <button onclick="calculateZakat()">📊 احسب الزكاة</button>
+    <div class="result" id="result">-</div>
+
+    <div class="footer">
+      المصدر: <code>gold.json</code> (يتم التحديث تلقائيًا)
+    </div>
+  </div>
+
+  <script>
+    async function fetchGoldPrice() {
+      try {
+        const res = await fetch("gold.json");
+        const data = await res.json();
+
+        const pricePerOunceSar = data.price_ounce_sar;
+        const gramPriceSar = pricePerOunceSar / 31.1035;
+
+        const baseInput = document.getElementById("gold-price");
+        baseInput.setAttribute("data-base", gramPriceSar.toFixed(2));
+        updateAdjustedPrice();
+      } catch (error) {
+        console.log("فشل في تحميل سعر الذهب من gold.json.");
+      }
+    }
+
+    function updateAdjustedPrice() {
+      const karatFactor = parseFloat(document.getElementById("gold-karat").value || 1);
+      const basePrice = parseFloat(document.getElementById("gold-price").getAttribute("data-base") || 0);
+      const adjustedPrice = basePrice * karatFactor;
+      document.getElementById("gold-price").value = adjustedPrice.toFixed(2);
+    }
+
+    function toggleFields() {
+      const type = document.getElementById("type").value;
+      document.getElementById("money-fields").style.display = type === "money" ? "block" : "none";
+      document.getElementById("gold-fields").style.display = type === "gold" ? "block" : "none";
+      document.getElementById("result").textContent = "-";
+    }
+
+    function calculateZakat() {
+      const type = document.getElementById("type").value;
+      let zakat = 0;
+
+      if (type === "money") {
+        const money = parseFloat(document.getElementById("money").value || 0);
+        zakat = money * 0.025;
+      } else {
+        const weight = parseFloat(document.getElementById("gold-weight").value || 0);
+        const price = parseFloat(document.getElementById("gold-price").value || 0);
+        zakat = weight * price * 0.025;
+      }
+
+      document.getElementById("result").textContent = `💸 مقدار الزكاة: ${zakat.toFixed(2)} ريال`;
+    }
+
+    function goHome() {
+      window.location.href = "home.html";
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark");
+    }
+
+    fetchGoldPrice();
+  </script>
+</body>
+</html>

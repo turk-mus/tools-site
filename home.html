@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>أسعار اليوم السعودية | الذهب، الوقود، الحاسبات</title>
+  <meta name="description" content="موقع أسعار اليوم السعودية يوفر لك أحدث أسعار الذهب والوقود في السعودية، إلى جانب حاسبات ذكية مثل الزكاة والعمر وتحويل التاريخ." />
+  <meta name="keywords" content="أسعار الذهب, أسعار الوقود, أسعار البنزين, حاسبة الزكاة, تحويل التاريخ, حاسبة العمر, السعودية, أسعار اليوم" />
+  <meta name="author" content="أسعار اليوم السعودية" />
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D8W8C8PYS9');
+  </script>
+
+  <style>
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .dark-mode {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #006c35;
+      margin-bottom: 10px;
+      font-size: 26px;
+    }
+
+    .dark-mode h1 {
+      color: #6ef19d;
+    }
+
+    p.description {
+      font-size: 18px;
+      color: #555;
+      margin-bottom: 30px;
+      line-height: 1.8;
+    }
+
+    .dark-mode p.description {
+      color: #bbb;
+    }
+
+    .top-bar {
+      text-align: left;
+      padding: 10px 20px;
+    }
+
+    .toggle-btn {
+      background: #006c35;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 15px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .info-boxes {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .info-box {
+      flex: 1 1 300px;
+      background-color: #ffffff;
+      border: 2px solid #eeeeee;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      text-align: right;
+    }
+
+    .dark-mode .info-box {
+      background-color: #1e1e1e;
+      border-color: #444;
+    }
+
+    .info-box h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #006c35;
+    }
+
+    .dark-mode .info-box h3 {
+      color: #6ef19d;
+    }
+
+    .info-box ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .info-box li {
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 15px;
+    }
+
+    .dark-mode .info-box li {
+      border-color: #444;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .btn {
+      flex: 1 1 250px;
+      background-color: #fff;
+      border: 2px solid #006c35;
+      border-radius: 10px;
+      text-decoration: none;
+      color: #006c35;
+      font-size: 18px;
+      padding: 15px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #006c35;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .dark-mode .btn {
+      background-color: #1e1e1e;
+      color: #6ef19d;
+      border-color: #6ef19d;
+    }
+
+    .dark-mode .btn:hover {
+      background-color: #6ef19d;
+      color: #000;
+    }
+
+    @media (max-width: 600px) {
+      .btn {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <button class="toggle-btn" onclick="toggleDarkMode()">🌓 وضع ليلي</button>
+  </div>
+
+  <div class="container">
+    <h1>📌 مرحبًا بك في موقع أسعار اليوم السعودية</h1>
+    <p class="description">
+      هنا ستجد أحدث أسعار <strong>الذهب</strong> و<strong>الوقود</strong> في السعودية، إضافة إلى أدوات مالية مفيدة مثل <strong>حاسبة الزكاة</strong> و<strong>حاسبة العمر</strong> و<strong>تحويل التاريخ</strong>. تم تصميم الموقع ليكون مرجعًا سهل الاستخدام ومفيدًا لكل من يهتم بالشؤون المالية اليومية في المملكة.
+    </p>
+
+    <!-- ✅ صندوق أسعار الذهب والديناميكية -->
+    <div class="info-boxes">
+      <div class="info-box">
+        <h3>💰 أسعار الذهب</h3>
+        <ul id="gold-prices">
+          <li>جاري تحميل الأسعار...</li>
+        </ul>
+      </div>
+      <div class="info-box">
+        <h3>⛽ أسعار الوقود</h3>
+        <ul>
+          <li>بنزين 91: 2.18 ريال</li>
+          <li>بنزين 95: 2.33 ريال</li>
+          <li>ديزل: 0.75 ريال</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <a href="gold.html" class="btn">💰 أسعار الذهب</a>
+      <a href="fuel.html" class="btn">⛽ أسعار الوقود</a>
+      <a href="zakat.html" class="btn">🧮 حاسبة الزكاة</a>
+      <a href="age.html" class="btn">🎂 حاسبة العمر</a>
+      <a href="history.html" class="btn">📅 تحويل بين الهجري والميلادي</a>
+      <a href="VAT.html" class="btn">💸 ضريبة القيمة المضافة</a>
+      <a href="retirement.html" class="btn">🏦 حاسبة التقاعد</a>
+    </div>
+
+    <!-- ✅ روابط السياسة والتواصل -->
+    <div class="buttons" style="margin-top: 30px;">
+      <a href="privacy.html" class="btn">🔐 سياسة الخصوصية</a>
+      <a href="terms.html" class="btn">📜 شروط الاستخدام</a>
+      <a href="contact.html" class="btn">📬 تواصل معنا</a>
+    </div>
+  </div>
+
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    async function fetchGoldPrices() {
+      try {
+        const response = await fetch("gold.json");
+        const data = await response.json();
+
+        const pricePerOunceUsd = data.price_ounce_usd;
+        const usdToSar = 3.75;
+        const pricePerGramSar = (pricePerOunceUsd / 31.1035) * usdToSar;
+
+        const gram24 = (pricePerGramSar * 1).toFixed(2);
+        const gram21 = (pricePerGramSar * (21 / 24)).toFixed(2);
+        const gram18 = (pricePerGramSar * (18 / 24)).toFixed(2);
+
+        document.getElementById('gold-prices').innerHTML = `
+          <li>عيار 24: ${gram24} ريال</li>
+          <li>عيار 21: ${gram21} ريال</li>
+          <li>عيار 18: ${gram18} ريال</li>
+        `;
+      } catch (err) {
+        document.getElementById('gold-prices').innerHTML = `<li>تعذر تحميل الأسعار</li>`;
+      }
+    }
+
+    fetchGoldPrices();
+  </script>
+</body>
+</html>
