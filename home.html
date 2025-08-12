@@ -197,6 +197,153 @@
       </div>
     </div>
 
+<!-- ====== Weather Card (no API key) ====== -->
+<style>
+  .card{border-radius:18px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px; margin-bottom:22px;}
+  .dark-mode .card{background:#1c1c1c}
+  .weather-card{display:flex;flex-direction:column;gap:10px}
+  .weather-header{display:flex;justify-content:space-between;align-items:center}
+  .weather-title{font-weight:700;color:#006c35}
+  .dark-mode .weather-title{color:#6ef19d}
+  .weather-meta{font-size:12px;color:#777}
+  .dark-mode .weather-meta{color:#aaa}
+  .weather-main{display:flex;align-items:center;gap:12px}
+  .weather-icon{font-size:30px}
+  .weather-temp{font-size:28px;font-weight:700}
+  .weather-sub{display:flex;gap:10px;color:#555;font-size:13px}
+  .dark-mode .weather-sub{color:#bbb}
+  .weather-btn{background:#006c35;color:#fff;border:none;border-radius:16px;padding:6px 10px;cursor:pointer}
+  .weather-btn:hover{background:#008f4c}
+</style>
+
+<div class="card weather-card" id="weather-card" dir="rtl" lang="ar">
+  <div class="weather-header">
+    <div>
+      <div class="weather-title">الطقس الآن</div>
+      <div class="weather-meta" id="weather-city">—</div> <!-- اسم المدينة -->
+    </div>
+    <div style="display:flex; gap:5px;">
+      <button class="weather-btn" id="unitBtn" aria-label="تبديل وحدة القياس">°C</button>
+      <button class="weather-btn" id="goWeather" aria-label="الذهاب لصفحة الطقس">صفحة الطقس</button>
+    </div>
+  </div>
+
+  <div class="weather-main">
+    <div class="weather-icon" id="weather-icon">⛅</div>
+    <div>
+      <div class="weather-temp"><span id="temp">--</span>°<span id="unit">C</span></div>
+      <div class="weather-sub">
+        <span id="desc">—</span>
+        <span>•</span>
+        <span>رياح: <span id="wind">--</span> كم/س</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="weather-meta">آخر تحديث: <span id="wx-updated">—</span></div>
+</div>
+
+<script>
+(() => {
+  const el = id => document.getElementById(id);
+  const cityEl = el('weather-city'), tempEl = el('temp'), unitEl = el('unit'),
+        iconEl = el('weather-icon'), descEl = el('desc'), windEl = el('wind'), updEl = el('wx-updated'),
+        unitBtn = el('unitBtn');
+
+  // الحالة
+  let useF = false;                  // هل نعرض فهرنهايت؟
+  let coords = { lat: 24.7136, lon: 46.6753 }; // افتراضي: الرياض
+  let lastTempC = null;              // نخزن الحرارة مئوية مرة واحدة
+  let lastWind = null;               // نخزن سرعة الرياح (كم/س)
+  let lastDesc = '—', lastIcon = '⛅';
+
+  // خريطة أكواد الطقس لوصف/أيقونة
+  const codeMap = {
+    0:['صحو','☀️'],1:['صافٍ غالبًا','🌤️'],2:['غائم جزئيًا','⛅'],3:['غائم','☁️'],
+    45:['ضباب','🌫️'],48:['ضباب','🌫️'],51:['رذاذ خفيف','🌦️'],53:['رذاذ','🌦️'],55:['رذاذ كثيف','🌧️'],
+    61:['مطر خفيف','🌧️'],63:['مطر','🌧️'],65:['مطر غزير','🌧️'],
+    66:['مطر متجمد','🌨️'],67:['مطر متجمد','🌨️'],71:['ثلج خفيف','❄️'],73:['ثلج','❄️'],75:['ثلج كثيف','❄️'],
+    77:['حبات جليد','🌨️'],80:['زخات خفيفة','🌦️'],81:['زخات','🌧️'],82:['زخات قوية','🌧️'],
+    85:['زخات ثلج','❄️'],86:['زخات ثلج قوية','❄️'],95:['عواصف رعدية','⛈️'],96:['عواصف مع بَرَد','⛈️'],99:['عواصف مع بَرَد كثيف','⛈️']
+  };
+  const wx = code => codeMap[code] || ['الطقس','🌡️'];
+
+  // تنسيق العرض حسب الوحدة الحالية
+  function updateDisplay() {
+    if (lastTempC == null) return;
+    const t = useF ? Math.round(lastTempC * 9/5 + 32) : Math.round(lastTempC);
+    tempEl.textContent = t;
+    unitEl.textContent = useF ? 'F' : 'C';
+    unitBtn.textContent = useF ? '°C' : '°F'; // الزر يتبدّل أيضًا
+    iconEl.textContent = lastIcon;
+    descEl.textContent = lastDesc;
+    if (lastWind != null) windEl.textContent = Math.round(lastWind);
+    updEl.textContent = new Date().toLocaleString("ar-EG", { hour12:false });
+  }
+
+  async function reverseGeocode(lat, lon) {
+    try {
+      const r = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=ar`,
+        { cache: 'no-store' }
+      );
+      const j = await r.json();
+      const g = j?.results?.[0];
+      if (!g) return 'الموقع';
+      const parts = [g.name, g.admin1 || g.country].filter(Boolean);
+      return parts.join('، ');
+    } catch {
+      return 'الموقع';
+    }
+  }
+
+  async function load(lat, lon) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
+    const res = await fetch(url, { cache: 'no-store' });
+    const data = await res.json();
+    const cw = data.current_weather;
+    if (!cw) throw new Error('No current weather');
+
+    const [d, ic] = wx(cw.weathercode);
+    lastDesc = d;
+    lastIcon = ic;
+    lastWind = cw.windspeed;
+    lastTempC = cw.temperature;
+
+    updateDisplay();
+    cityEl.textContent = await reverseGeocode(lat, lon);
+  }
+
+  unitBtn.addEventListener('click', () => {
+    useF = !useF;
+    updateDisplay();
+  });
+
+  // زر الذهاب لصفحة الطقس
+  document.getElementById('goWeather').addEventListener('click', () => {
+    window.location.href = 'weather.html'; // عدل المسار حسب موقع صفحتك
+  });
+
+  function start(lat, lon){
+    coords = {lat, lon};
+    load(lat, lon).catch(() => { 
+      cityEl.textContent='تعذّر جلب البيانات';
+    });
+  }
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => start(pos.coords.latitude, pos.coords.longitude),
+      ()  => start(coords.lat, coords.lon)
+    );
+  } else {
+    start(coords.lat, coords.lon);
+  }
+})();
+</script>
+
+
+    
     <div class="buttons">
       <a href="gold.html" class="btn">💰 أسعار الذهب</a>
       <a href="fuel.html" class="btn">⛽ أسعار الوقود</a>

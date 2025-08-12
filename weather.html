@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>الطقس في مناطق السعودية</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body{font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#0f172a; color:#e5e7eb}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+    .card{background:#111827;border:1px solid #374151;border-radius:14px;padding:14px;transition:.15s;display:flex;gap:10px;align-items:center}
+    .card:hover{transform:translateY(-2px);box-shadow:0 10px 18px rgba(0,0,0,.18)}
+    .city{font-weight:700}
+    .muted{color:#9ca3af;font-size:14px}
+    .emoji{font-size:28px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 style="margin-bottom:16px">الطقس في مناطق المملكة</h1>
+    <div id="wx-grid" class="grid"></div>
+  </div>
+
+  <script>
+    const REGIONS = [
+      {name:'الرياض',lat:24.7136,lon:46.6753},
+      {name:'مكة المكرمة',lat:21.3891,lon:39.8579},
+      {name:'المدينة المنورة',lat:24.5247,lon:39.5692},
+      {name:'الشرقية',lat:26.4207,lon:50.0888},
+      {name:'القصيم',lat:26.2074,lon:43.4837},
+      {name:'عسير',lat:18.2164,lon:42.5053},
+      {name:'حائل',lat:27.5114,lon:41.7208},
+      {name:'تبوك',lat:28.3833,lon:36.5833},
+      {name:'جازان',lat:16.8892,lon:42.5706},
+      {name:'نجران',lat:17.4924,lon:44.1277},
+      {name:'الباحة',lat:20.0129,lon:41.4677},
+      {name:'الحدود الشمالية',lat:30.984,lon:41.038}
+    ];
+
+    const WMO = {
+      0:['صافٍ','☀️'],1:['غالبًا صافٍ','🌤️'],2:['غائم جزئيًا','⛅'],3:['غائم','☁️'],
+      45:['ضباب','🌫️'],48:['ضباب متجمد','🌫️'],
+      51:['رذاذ خفيف','🌦️'],53:['رذاذ متوسط','🌦️'],55:['رذاذ غزير','🌧️'],
+      61:['مطر خفيف','🌦️'],63:['مطر متوسط','🌧️'],65:['مطر غزير','🌧️'],
+      66:['مطر متجمد خفيف','🌧️'],67:['مطر متجمد غزير','🌧️'],
+      71:['ثلج خفيف','🌨️'],73:['ثلج متوسط','🌨️'],75:['ثلج غزير','❄️'],
+      77:['حبات ثلج','❄️'],80:['زخات خفيفة','🌦️'],81:['زخات مطر','🌧️'],82:['زخات غزيرة','⛈️'],
+      85:['زخات ثلج خفيفة','🌨️'],86:['زخات ثلج غزيرة','❄️'],
+      95:['عواصف رعدية','⛈️'],96:['عواصف مع برد خفيف','⛈️'],99:['عواصف مع برد غزير','⛈️']
+    };
+
+    const grid = document.getElementById('wx-grid');
+
+    async function fetchWeather(lat, lon){
+      const u = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`;
+      const r = await fetch(u); if(!r.ok) throw new Error();
+      return r.json();
+    }
+
+    async function load(){
+      for (const r of REGIONS){
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<div class="emoji">⛅</div>
+                          <div><div class="city">${r.name}</div>
+                          <div class="muted">جاري الجلب…</div></div>`;
+        grid.appendChild(card);
+        try{
+          const data = await fetchWeather(r.lat, r.lon);
+          const t = Math.round(data.current.temperature_2m);
+          const code = data.current.weather_code;
+          const [desc, emoji] = WMO[code] || ['غير متاح','⛅'];
+          card.querySelector('.emoji').textContent = emoji;
+          card.querySelector('.muted').textContent = `${t}° م — ${desc}`;
+        }catch{
+          card.querySelector('.muted').textContent = 'تعذّر الجلب';
+        }
+      }
+    }
+    load();
+  </script>
+</body>
+</html>
