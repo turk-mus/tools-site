@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>مواعيد الرواتب والدعم في السعودية</title>
+
+  <!-- Tailwind (اختياري لو كنت تستخدمه في بقية الموقع) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body{background:#f6f6f6;font-family:system-ui,-apple-system,Segoe UI,Roboto}
+    .container{max-width:1000px;margin:24px auto;padding:0 12px}
+    .card{border-radius:18px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px;margin-bottom:18px}
+    .title{font-weight:800;color:#006c35;font-size:20px}
+    .meta{color:#777;font-size:12px}
+    .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+    .row:last-child{border-bottom:none}
+    .name{font-weight:700}
+    .date{font-size:13px;color:#666}
+    .left{font-weight:800}
+    .badge{display:inline-flex;align-items:center;gap:6px;background:#eef8f1;color:#176b3a;border-radius:999px;padding:4px 10px;font-size:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px}
+    @media(min-width:700px){.grid{grid-template-columns:1fr 1fr}}
+    .btn{background:#006c35;color:#fff;border:none;border-radius:12px;padding:8px 12px;cursor:pointer}
+    .btn:hover{background:#008f4c}
+    .foot{font-size:12px;color:#666;line-height:1.9}
+    .note{background:#fff9e6;border:1px solid #ffe6a7;border-radius:12px;padding:10px;margin-top:14px}
+    a.source{color:#0b7; text-decoration:underline}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div>
+        <div class="title">مواعيد الرواتب والدعم</div>
+        <div class="meta">حساب تلقائي لأقرب موعد + عدّ تنازلي</div>
+      </div>
+      <button class="btn" onclick="history.back()">رجوع</button>
+    </div>
+
+    <div class="grid">
+      <!-- الموظفون الحكوميون -->
+      <div class="card" id="govCard">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="title">راتب الموظفين الحكوميين</div>
+          <span class="badge">موعد ثابت: 27 ميلادي</span>
+        </div>
+        <div class="row">
+          <div>
+            <div class="name">التاريخ القادم</div>
+            <div class="date" id="govDate">—</div>
+          </div>
+          <div class="left" id="govLeft">— يوم</div>
+        </div>
+        <div class="meta">ملاحظة: إذا صادف 27 جمعة يُقدَّم للخميس 26، وإذا صادف سبت يُؤجَّل للأحد 29.</div>
+      </div>
+
+      <!-- المتقاعدون (التقاعد - GOSI) -->
+      <div class="card" id="retCard">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="title">راتب التقاعد (المؤسسة العامة للتأمينات)</div>
+          <span class="badge">موعد ثابت: 1 ميلادي</span>
+        </div>
+        <div class="row">
+          <div>
+            <div class="name">التاريخ القادم</div>
+            <div class="date" id="retDate">—</div>
+          </div>
+          <div class="left" id="retLeft">— يوم</div>
+        </div>
+        <div class="meta">إذا وافق الجمعة/السبت يُقدَّم للخميس السابق.</div>
+      </div>
+
+      <!-- الضمان الاجتماعي المطور -->
+      <div class="card" id="ssCard">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="title">الضمان الاجتماعي المطوّر</div>
+          <span class="badge">موعد غالبًا: 1 ميلادي</span>
+        </div>
+        <div class="row">
+          <div>
+            <div class="name">التاريخ القادم</div>
+            <div class="date" id="ssDate">—</div>
+          </div>
+          <div class="left" id="ssLeft">— يوم</div>
+        </div>
+        <div class="meta">إذا وافق الجمعة يُقدَّم للخميس، وإذا وافق السبت يُرحّل للأحد 2.</div>
+      </div>
+
+      <!-- حساب المواطن -->
+      <div class="card" id="caCard">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="title">حساب المواطن</div>
+          <span class="badge">موعد ثابت: 10 ميلادي</span>
+        </div>
+        <div class="row">
+          <div>
+            <div class="name">التاريخ القادم</div>
+            <div class="date" id="caDate">—</div>
+          </div>
+          <div class="left" id="caLeft">— يوم</div>
+        </div>
+        <div class="meta">إذا وافق الجمعة يُقدَّم للخميس 9، وإذا وافق السبت يُؤجَّل للأحد 11.</div>
+      </div>
+
+      <!-- حافز -->
+      <div class="card" id="hafizCard">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="title">حافز (إعانة البحث عن عمل)</div>
+          <span class="badge">موعد شائع: 5 ميلادي</span>
+        </div>
+        <div class="row">
+          <div>
+            <div class="name">التاريخ القادم</div>
+            <div class="date" id="hafizDate">—</div>
+          </div>
+          <div class="left" id="hafizLeft">— يوم</div>
+        </div>
+        <div class="meta">إذا وافق الجمعة يُقدَّم للخميس 4، وإذا وافق السبت يُؤجَّل للأحد 6.</div>
+      </div>
+
+      <!-- ساند -->
+      <div class="card" id="sanedCard">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="title">ساند (تعويض التعطل عن العمل)</div>
+          <span class="badge">خلال الأسبوع الأول</span>
+        </div>
+        <div class="row">
+          <div>
+            <div class="name">نافذة الصرف القادمة</div>
+            <div class="date" id="sanedDate">—</div>
+          </div>
+          <div class="left" id="sanedLeft">≤ 7 أيام</div>
+        </div>
+        <div class="meta">النظام ينص على أن الصرف لا يتجاوز الأسبوع الأول من كل شهر ميلادي.</div>
+      </div>
+    </div>
+
+    <div class="card note">
+      <div class="foot">
+        <b>تنبيه مهم:</b> قد تُقدَّم/تؤجَّل بعض الدفعات عند مصادفة عُطل نهاية الأسبوع أو الإجازات الرسمية أو المناسبات (مثل الأعياد). يُفضّل دائمًا متابعة القنوات الرسمية عند الاقتراب من الموعد.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="foot">
+        <b>مراجع موثوقة:</b><br>
+        • راتب الموظفين الحكوميين: 27 ميلادي (تقديم الجمعة إلى الخميس). مصدر: ليكسس ميدل إيست ملخّص وزارة المالية. <a class="source" href="#" onclick="openSrc('gov')">رابط</a> :contentReference[oaicite:0]{index=0}<br>
+        • التقاعد (GOSI): توحيد صرف المعاشات في <b>اليوم الأول</b> من كل شهر، وتقديمه الخميس إذا صادف جمعة/سبت. <a class="source" href="#" onclick="openSrc('ret')">رابط</a> :contentReference[oaicite:1]{index=1}<br>
+        • حساب المواطن: <b>اليوم 10</b> من كل شهر ميلادي. <a class="source" href="#" onclick="openSrc('ca')">رابط</a> :contentReference[oaicite:2]{index=2}<br>
+        • حافز: عادة <b>اليوم 5</b> ميلادي (مع تقديم/تأجيل عند العُطل). <a class="source" href="#" onclick="openSrc('hafiz')">رابط</a> :contentReference[oaicite:3]{index=3}<br>
+        • الضمان المطوّر: غالبًا <b>اليوم 1</b> ميلادي. <a class="source" href="#" onclick="openSrc('ss')">رابط</a> :contentReference[oaicite:4]{index=4}<br>
+        • ساند: الصرف لا يتجاوز <b>الأسبوع الأول</b> من الشهر. <a class="source" href="#" onclick="openSrc('saned')">رابط</a> :contentReference[oaicite:5]{index=5}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // فتح المصادر في تبويب جديد (حسب الزر)
+    function openSrc(key){
+      const map = {
+        gov:  "https://www.lexismiddleeast.com/news/2024-10-21_50",
+        ret:  "https://saudigazette.com.sa/article/641906",
+        ca:   "https://saudipedia.com/en/article/364/government-and-politics/vision-2030/citizens-account",
+        hafiz:"https://saudisalaries.com/%D9%85%D9%88%D8%B9%D8%AF-%D9%86%D8%B2%D9%88%D9%84-%D8%AD%D8%A7%D9%81%D8%B2",
+        ss:   "https://minthr.com/ar/blog/%D9%85%D8%AA%D9%89-%D9%8A%D9%86%D8%B2%D9%84-%D8%A7%D9%84%D8%B6%D9%85%D8%A7%D9%86-%D8%A7%D9%84%D8%A7%D8%AC%D8%AA%D9%85%D8%A7%D8%B9%D9%8A-%D8%A7%D9%84%D9%85%D8%B7%D9%88%D8%B1-%D9%81%D9%8A-%D8%A7%D9%84%D8%B3%D8%B9%D9%88%D8%AF%D9%8A%D8%A9/",
+        saned:"https://www.gosi.gov.sa/GOSIOnline/Unemployment_Insurance_%28SANED%29%26locale%3Den_US"
+      };
+      const url = map[key]; if (url) window.open(url, '_blank');
+    }
+
+    // أدوات عامة
+    const fmtDateAr = d => d.toLocaleDateString('ar-SA', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+    const startOfDay = dt => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    const daysBetween = (a,b) => Math.max(0, Math.round((startOfDay(b)-startOfDay(a))/86400000));
+
+    // تعويضات عطلة نهاية الأسبوع: جمعة/سبت
+    const isFri = d => d.getDay() === 5; // Fri
+    const isSat = d => d.getDay() === 6; // Sat
+    const isSun = d => d.getDay() === 0; // Sun (مفيد لبعض الحالات)
+
+    // 1) الموظفون الحكوميون: 27، جمعة=>26، سبت=>29 (الأحد)
+    function nextGov(){
+      const now = new Date();
+      let d = new Date(now.getFullYear(), now.getMonth(), 27);
+      if (d < startOfDay(now)) d = new Date(now.getFullYear(), now.getMonth()+1, 27);
+      if (isFri(d)) d.setDate(26);
+      if (isSat(d)) d.setDate(29);
+      return d;
+    }
+
+    // 2) التقاعد (GOSI): اليوم 1 من كل شهر، وإذا جمعة/سبت => الخميس السابق
+    function nextRet(){
+      const now = new Date();
+      let d = new Date(now.getFullYear(), now.getMonth(), 1);
+      if (d < startOfDay(now)) d = new Date(now.getFullYear(), now.getMonth()+1, 1);
+      if (isFri(d)) d.setDate(d.getDate()-1);       // خميس
+      if (isSat(d)) d.setDate(d.getDate()-2);       // خميس
+      return d;
+    }
+
+    // 3) الضمان المطوّر: غالبًا اليوم 1، جمعة=>خميس، سبت=>الأحد 2
+    function nextSS(){
+      const now = new Date();
+      let d = new Date(now.getFullYear(), now.getMonth(), 1);
+      if (d < startOfDay(now)) d = new Date(now.getFullYear(), now.getMonth()+1, 1);
+      if (isFri(d)) d.setDate(d.getDate()-1); // خميس 30/31
+      if (isSat(d)) d.setDate(d.getDate()+1); // أحد 2
+      return d;
+    }
+
+    // 4) حساب المواطن: اليوم 10، جمعة=>9 (خميس)، سبت=>11 (أحد)
+    function nextCA(){
+      const now = new Date();
+      let d = new Date(now.getFullYear(), now.getMonth(), 10);
+      if (d < startOfDay(now)) d = new Date(now.getFullYear(), now.getMonth()+1, 10);
+      if (isFri(d)) d.setDate(9);
+      if (isSat(d)) d.setDate(11);
+      return d;
+    }
+
+    // 5) حافز: اليوم 5، جمعة=>4 (خميس)، سبت=>6 (أحد)
+    function nextHafiz(){
+      const now = new Date();
+      let d = new Date(now.getFullYear(), now.getMonth(), 5);
+      if (d < startOfDay(now)) d = new Date(now.getFullYear(), now.getMonth()+1, 5);
+      if (isFri(d)) d.setDate(4);
+      if (isSat(d)) d.setDate(6);
+      return d;
+    }
+
+    // 6) ساند: خلال الأسبوع الأول (1–7). نعرض نافذة + العد حتى يوم 7.
+    function nextSanedWindow(){
+      const now = new Date();
+      // إن كنا بعد 7 في الشهر، نذهب للشهر القادم
+      let end = new Date(now.getFullYear(), now.getMonth(), 7);
+      if (now > end) end = new Date(now.getFullYear(), now.getMonth()+1, 7);
+      // بداية النافذة هي 1 (مع تهيئة للعطل: إن كان 1 جمعة/سبت، يبقى "ضمن الأسبوع الأول")
+      const start = new Date(end.getFullYear(), end.getMonth(), 1);
+      return {start, end};
+    }
+
+    function render(){
+      const now = new Date();
+
+      // الحكومة
+      const gov = nextGov();
+      document.getElementById('govDate').textContent = fmtDateAr(gov) + ' (27 ميلادي مع تعديل العُطل)';
+      document.getElementById('govLeft').textContent = daysBetween(now, gov) + ' يوم';
+
+      // التقاعد
+      const ret = nextRet();
+      document.getElementById('retDate').textContent = fmtDateAr(ret) + ' (1 ميلادي مع تقديم العُطل)';
+      document.getElementById('retLeft').textContent = daysBetween(now, ret) + ' يوم';
+
+      // الضمان المطوّر
+      const ss = nextSS();
+      document.getElementById('ssDate').textContent = fmtDateAr(ss) + ' (1 ميلادي غالبًا)';
+      document.getElementById('ssLeft').textContent = daysBetween(now, ss) + ' يوم';
+
+      // حساب المواطن
+      const ca = nextCA();
+      document.getElementById('caDate').textContent = fmtDateAr(ca) + ' (10 ميلادي مع تعديل العُطل)';
+      document.getElementById('caLeft').textContent = daysBetween(now, ca) + ' يوم';
+
+      // حافز
+      const hf = nextHafiz();
+      document.getElementById('hafizDate').textContent = fmtDateAr(hf) + ' (5 ميلادي مع تعديل العُطل)';
+      document.getElementById('hafizLeft').textContent = daysBetween(now, hf) + ' يوم';
+
+      // ساند
+      const win = nextSanedWindow();
+      document.getElementById('sanedDate').textContent =
+        `بين ${fmtDateAr(win.start)} و ${fmtDateAr(win.end)} (الأسبوع الأول)`;
+      document.getElementById('sanedLeft').textContent =
+        daysBetween(now, win.end) + ' يوم';
+    }
+
+    render();
+  </script>
+</body>
+</html>

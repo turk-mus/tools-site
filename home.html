@@ -197,6 +197,122 @@
       </div>
     </div>
 
+<!-- ====== Salaries Card (no API) ====== -->
+<style>
+  .salary-card .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+  .dark-mode .salary-card .row{border-bottom:1px solid rgba(255,255,255,.06)}
+  .salary-name{font-weight:700}
+  .salary-date{font-size:13px;color:#666}
+  .dark-mode .salary-date{color:#aaa}
+  .salary-left{font-weight:700}
+  .salary-actions{display:flex;gap:8px}
+  .salary-btn{background:#006c35;color:#fff;border:none;border-radius:16px;padding:6px 10px;cursor:pointer}
+  .salary-btn:hover{background:#008f4c}
+</style>
+
+<div class="card salary-card" dir="rtl" lang="ar">
+  <div class="weather-header">
+    <div>
+      <div class="weather-title">الرواتب</div>
+      <div class="weather-meta">أقرب موعدين للصرف</div>
+    </div>
+    <div class="salary-actions">
+      <button class="salary-btn" id="goSalaries">عرض جدول الرواتب</button>
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <div class="salary-name">موظفو الحكومة</div>
+      <div class="salary-date" id="sal1-date">—</div>
+    </div>
+    <div class="salary-left" id="sal1-left">— يوم</div>
+  </div>
+
+  <div class="row" style="border-bottom:none;">
+    <div>
+      <div class="salary-name">المتقاعدون</div>
+      <div class="salary-date" id="sal2-date">—</div>
+    </div>
+    <div class="salary-left" id="sal2-left">— يوم</div>
+  </div>
+
+  <div class="weather-meta">آخر تحديث: <span id="sal-updated">—</span></div>
+</div>
+
+<script>
+(() => {
+  // إعدادات الرواتب (يمكنك تعديل الأيام بسهولة لاحقًا)
+  const GOV_DAY  = 27; // الموظفون الحكوميون: يوم 27 ميلادي
+  const RET_DAY  = 25; // المتقاعدون: يوم 25 ميلادي
+
+  const el = id => document.getElementById(id);
+  const sal1Date = el('sal1-date'), sal1Left = el('sal1-left');
+  const sal2Date = el('sal2-date'), sal2Left = el('sal2-left');
+  const updEl = el('sal-updated');
+
+  function nextPayday(dayOfMonth){
+    const now = new Date();
+    // تاريخ هذا الشهر في نفس اليوم
+    const d = new Date(now.getFullYear(), now.getMonth(), dayOfMonth, 0, 0, 0);
+    // إذا فات اليوم أو غير موجود (مثلاً فبراير 30)، انتقل للشهر القادم
+    if (isNaN(d.getTime()) || d < startOfDay(now)) {
+      const next = new Date(now.getFullYear(), now.getMonth()+1, dayOfMonth, 0, 0, 0);
+      // معالجة لو كان اليوم غير موجود في الشهر القادم (نادراً لما نستخدم 25/27)
+      return isNaN(next.getTime()) ? lastValidDayOfMonth(next.getFullYear(), next.getMonth()) : next;
+    }
+    return d;
+  }
+
+  function startOfDay(dt){
+    return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0);
+  }
+
+  function daysBetween(a, b){
+    const ms = startOfDay(b) - startOfDay(a);
+    return Math.max(0, Math.round(ms / 86400000)); // 1000*60*60*24
+  }
+
+  function lastValidDayOfMonth(year, monthIndex){
+    // يرجع آخر يوم صالح في الشهر
+    const last = new Date(year, monthIndex + 1, 0);
+    return last;
+  }
+
+  function fmtDateAr(d){
+    return d.toLocaleDateString('ar-EG', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  function render(){
+    const now = new Date();
+
+    const gov = nextPayday(GOV_DAY);
+    const ret = nextPayday(RET_DAY);
+
+    sal1Date.textContent = fmtDateAr(gov) + ' (27 من كل شهر)';
+    sal2Date.textContent = fmtDateAr(ret) + ' (25 من كل شهر)';
+
+    sal1Left.textContent = daysBetween(now, gov) + ' يوم';
+    sal2Left.textContent = daysBetween(now, ret) + ' يوم';
+
+    updEl.textContent = now.toLocaleString('ar-EG', { hour12:false });
+  }
+
+  // زر الذهاب لصفحة الرواتب
+  document.getElementById('goSalaries').addEventListener('click', () => {
+    window.location.href = 'salaries.html'; // عدّل المسار حسب صفحتك
+  });
+
+  render();
+})();
+</script>
+
+
 <!-- ====== Weather Card (no API key) ====== -->
 <style>
   .card{border-radius:18px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px; margin-bottom:22px;}
