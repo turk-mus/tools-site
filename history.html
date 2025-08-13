@@ -8,16 +8,26 @@
   <meta name="keywords" content="تحويل التاريخ, التاريخ الهجري, التاريخ الميلادي, هجري إلى ميلادي, ميلادي إلى هجري">
   <link href="https://fonts.googleapis.com/css2?family=Tajawal&display=swap" rel="stylesheet">
   <style>
+    :root{
+      --bg:#f4f4f4; --card:#fff; --text:#333; --muted:#777; --primary:#006c35; --primary-hover:#004f27;
+      --border:rgba(0,0,0,.1);
+    }
+    body.dark{
+      --bg:#111; --card:#1b1b1b; --text:#e6e6e6; --muted:#b3b3b3; --primary:#1fa466; --primary-hover:#169056;
+      --border:rgba(255,255,255,.1);
+    }
+
     body {
       font-family: 'Tajawal', sans-serif;
       margin: 0;
       padding: 0;
-      background: #f4f4f4;
-      color: #333;
+      background: var(--bg);
+      color: var(--text);
+      transition: background .2s ease, color .2s ease;
     }
 
     header {
-      background: #006c35;
+      background: var(--primary);
       color: white;
       padding: 15px;
       text-align: center;
@@ -32,7 +42,7 @@
     }
 
     .top-buttons button {
-      background-color: #006c35;
+      background-color: var(--primary);
       color: white;
       border: none;
       padding: 10px 20px;
@@ -40,14 +50,16 @@
       border-radius: 10px;
       cursor: pointer;
     }
+    .top-buttons button:hover{ background: var(--primary-hover); }
 
     .container {
       max-width: 700px;
       margin: 20px auto;
-      background: white;
+      background: var(--card);
       padding: 30px;
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px var(--border);
+      transition: background .2s ease;
     }
 
     label {
@@ -63,7 +75,10 @@
       border-radius: 8px;
       width: 100%;
       margin-bottom: 20px;
+      background: inherit;
+      color: inherit;
     }
+    body.dark select, body.dark input{ border-color:#444; }
 
     .convert-group {
       display: flex;
@@ -75,7 +90,7 @@
     }
 
     button.convert-btn {
-      background-color: #006c35;
+      background-color: var(--primary);
       color: white;
       border: none;
       padding: 12px;
@@ -86,7 +101,7 @@
     }
 
     button.convert-btn:hover {
-      background-color: #004f27;
+      background-color: var(--primary-hover);
     }
 
     .result {
@@ -99,28 +114,24 @@
       text-align: center;
       margin-top: 30px;
       font-size: 14px;
-      color: #777;
+      color: var(--muted);
     }
   </style>
+
   <!-- Google tag (gtag.js) -->
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-D8W8C8PYS9');
-</script>
-
-
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date()); gtag('config', 'G-D8W8C8PYS9');
+  </script>
 </head>
 <body>
 
   <header>📅 تحويل التاريخ بين الميلادي والهجري</header>
 
   <div class="top-buttons">
-    <button onclick="toggleDarkMode()">🌐 الوضع الليلي</button>
+    <button id="darkBtn" onclick="toggleDarkMode()">🌙 الوضع الليلي</button>
     <button onclick="window.location.href='home.html'">🏠 الصفحة الرئيسية</button>
   </div>
 
@@ -131,100 +142,175 @@
       <option value="hijri-to-gregorian">من هجري إلى ميلادي</option>
     </select>
 
+    <!-- --- ميلادي: يوم/شهر/سنة --- -->
     <div id="gregorian-input">
-      <label for="gregorian-date">التاريخ الميلادي:</label>
-      <input type="date" id="gregorian-date" />
+      <label>التاريخ الميلادي:</label>
+      <div class="convert-group">
+        <select id="g-day"><option value="">اليوم</option></select>
+        <select id="g-month"><option value="">الشهر</option></select>
+        <select id="g-year"><option value="">السنة</option></select>
+      </div>
     </div>
 
+    <!-- --- هجري: يوم/شهر/سنة --- -->
     <div id="hijri-input" style="display: none;">
       <label>التاريخ الهجري:</label>
       <div class="convert-group">
-        <select id="hijri-day">
-          <option value="">اليوم</option>
-        </select>
-        <select id="hijri-month">
-          <option value="">الشهر</option>
-        </select>
-        <select id="hijri-year">
-          <option value="">السنة</option>
-        </select>
+        <select id="hijri-day"><option value="">اليوم</option></select>
+        <select id="hijri-month"><option value="">الشهر</option></select>
+        <select id="hijri-year"><option value="">السنة</option></select>
       </div>
     </div>
 
     <button class="convert-btn" onclick="convertDate()">📅 تحويل</button>
 
     <div class="result" id="result">-</div>
+    <div class="footer">ملحوظة: صيغة واجهة Aladhan تتطلب DD-MM-YYYY.</div>
   </div>
 
   <script>
+    // ======== الوضع الليلي مع حفظ التفضيل ========
+    function applyDarkPref(){
+      const pref = localStorage.getItem('pref-dark');
+      if (pref === '1') document.body.classList.add('dark');
+      document.getElementById('darkBtn').textContent =
+        document.body.classList.contains('dark') ? '☀️ الوضع الفاتح' : '🌙 الوضع الليلي';
+    }
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('pref-dark', document.body.classList.contains('dark') ? '1' : '0');
+      applyDarkPref();
+    }
+
+    // ======== تهيئة قوائم الميلادي ========
+    const gDay = document.getElementById('g-day');
+    const gMonth = document.getElementById('g-month');
+    const gYear = document.getElementById('g-year');
+
+    const gMonths = [
+      'يناير','فبراير','مارس','أبريل','مايو','يونيو',
+      'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'
+    ];
+
+    function isLeap(y){ return (y%4===0 && y%100!==0) || (y%400===0); }
+    function daysInMonth(y, mIndex){ // mIndex: 0..11
+      const base = [31, (isLeap(y)?29:28), 31,30,31,30,31,31,30,31,30,31];
+      return base[mIndex] || 30;
+    }
+
+    function fillGregorian() {
+      // أشهر
+      for (let i=0;i<12;i++){
+        const opt=document.createElement('option');
+        opt.value=i+1; opt.textContent=gMonths[i];
+        gMonth.appendChild(opt);
+      }
+      // سنوات (1960 -> 2100)
+      for (let y=1960; y<=2100; y++){
+        const opt=document.createElement('option');
+        opt.value=y; opt.textContent=y;
+        gYear.appendChild(opt);
+      }
+
+      // حدّث الأيام حسب الشهر/السنة
+      function refreshDays(){
+        const y = parseInt(gYear.value,10);
+        const m = parseInt(gMonth.value,10);
+        const max = (!isNaN(y) && !isNaN(m)) ? daysInMonth(y, m-1) : 31;
+        // أعد البناء
+        const sel = gDay.value;
+        gDay.innerHTML = '<option value="">اليوم</option>';
+        for (let d=1; d<=max; d++){
+          const opt=document.createElement('option');
+          opt.value=d; opt.textContent=d;
+          gDay.appendChild(opt);
+        }
+        if (sel && sel<=max) gDay.value = sel;
+      }
+      gMonth.addEventListener('change', refreshDays);
+      gYear.addEventListener('change', refreshDays);
+
+      // قيَم افتراضية (اليوم)
+      const now = new Date();
+      gYear.value = now.getFullYear();
+      gMonth.value = now.getMonth()+1;
+      refreshDays();
+      gDay.value = now.getDate();
+    }
+
+    // ======== تهيئة قوائم الهجري ========
+    const hDay = document.getElementById('hijri-day');
+    const hMonth = document.getElementById('hijri-month');
+    const hYear = document.getElementById('hijri-year');
+    const hMonths = ["محرم","صفر","ربيع أول","ربيع ثاني","جمادى أولى","جمادى ثانية","رجب","شعبان","رمضان","شوال","ذو القعدة","ذو الحجة"];
+
+    function populateHijriOptions() {
+      for (let i = 1; i <= 30; i++) {
+        const opt = document.createElement('option');
+        opt.value = i; opt.textContent = i;
+        hDay.appendChild(opt);
+      }
+      for (let i = 1; i <= 12; i++) {
+        const opt = document.createElement('option');
+        opt.value = i; opt.textContent = hMonths[i - 1];
+        hMonth.appendChild(opt);
+      }
+      for (let i = 1400; i <= 1500; i++) {
+        const opt = document.createElement('option');
+        opt.value = i; opt.textContent = i;
+        hYear.appendChild(opt);
+      }
+    }
+
+    // ======== عرض/إخفاء مجموعات الإدخال ========
     function toggleDateInputs() {
       const direction = document.getElementById('direction').value;
       document.getElementById('gregorian-input').style.display = direction === 'gregorian-to-hijri' ? 'block' : 'none';
-      document.getElementById('hijri-input').style.display = direction === 'hijri-to-gregorian' ? 'block' : 'none';
+      document.getElementById('hijri-input').style.display     = direction === 'hijri-to-gregorian' ? 'block' : 'none';
       document.getElementById('result').textContent = '-';
     }
 
+    // ======== التحويل ========
     async function convertDate() {
       const direction = document.getElementById('direction').value;
       const resultDiv = document.getElementById('result');
 
-      if (direction === 'gregorian-to-hijri') {
-        const gregorianDate = document.getElementById('gregorian-date').value;
-        if (!gregorianDate) return resultDiv.textContent = 'يرجى إدخال التاريخ الميلادي';
-
-        const res = await fetch(`https://api.aladhan.com/v1/gToH?date=${gregorianDate}`);
-        const data = await res.json();
-        const hijri = data.data.hijri.date;
-        resultDiv.textContent = `📆 التاريخ الهجري: ${hijri}`;
-      } else {
-        const d = document.getElementById('hijri-day').value;
-        const m = document.getElementById('hijri-month').value;
-        const y = document.getElementById('hijri-year').value;
-        if (!d || !m || !y) return resultDiv.textContent = 'يرجى إدخال التاريخ الهجري بالكامل';
-
-        const hijriDate = `${d}-${m}-${y}`;
-        const res = await fetch(`https://api.aladhan.com/v1/hToG?date=${hijriDate}`);
-        const data = await res.json();
-        const gregorian = data.data.gregorian.date;
-        resultDiv.textContent = `📆 التاريخ الميلادي: ${gregorian}`;
+      try {
+        if (direction === 'gregorian-to-hijri') {
+          const d = gDay.value, m = gMonth.value, y = gYear.value;
+          if (!d || !m || !y) return resultDiv.textContent = 'يرجى إدخال التاريخ الميلادي بالكامل';
+          const dateStr = String(d).padStart(2,'0') + '-' + String(m).padStart(2,'0') + '-' + y; // DD-MM-YYYY
+          const res = await fetch(`https://api.aladhan.com/v1/gToH?date=${dateStr}`);
+          const data = await res.json();
+          if (!data || !data.data || !data.data.hijri) throw new Error('تعذر التحويل');
+          const hj = data.data.hijri; // { date: 'DD-...-YYYY', weekday:..., month:... }
+          resultDiv.textContent = `📆 التاريخ الهجري: ${hj.date} — ${hj.weekday.ar}، ${hj.month.ar} ${hj.day}`;
+        } else {
+          const d = hDay.value, m = hMonth.value, y = hYear.value;
+          if (!d || !m || !y) return resultDiv.textContent = 'يرجى إدخال التاريخ الهجري بالكامل';
+          const dateStr = String(d).padStart(2,'0') + '-' + String(m).padStart(2,'0') + '-' + y; // DD-MM-YYYY
+          const res = await fetch(`https://api.aladhan.com/v1/hToG?date=${dateStr}`);
+          const data = await res.json();
+          if (!data || !data.data || !data.data.gregorian) throw new Error('تعذر التحويل');
+          const gr = data.data.gregorian;
+          resultDiv.textContent = `📆 التاريخ الميلادي: ${gr.date} — ${gr.weekday.en}, ${gr.month.en} ${gr.day}`;
+        }
+      } catch (e) {
+        resultDiv.textContent = 'حدث خطأ أثناء التحويل. تأكد من المدخلات وحاول مرة أخرى.';
+        console.error(e);
       }
     }
 
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark');
-    }
-
-    // توليد خيارات اليوم والشهر والسنة للهجري
-    function populateHijriOptions() {
-      const days = document.getElementById('hijri-day');
-      const months = document.getElementById('hijri-month');
-      const years = document.getElementById('hijri-year');
-
-      for (let i = 1; i <= 30; i++) {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = i;
-        days.appendChild(opt);
-      }
-
-      const monthNames = ["محرم", "صفر", "ربيع أول", "ربيع ثاني", "جمادى أولى", "جمادى ثانية", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
-      for (let i = 1; i <= 12; i++) {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = monthNames[i - 1];
-        months.appendChild(opt);
-      }
-
-      const currentYear = new Date().getFullYear();
-      for (let i = 1400; i <= 1500; i++) {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = i;
-        years.appendChild(opt);
-      }
-    }
-
+    // ======== تهيئة الصفحة ========
     populateHijriOptions();
+    fillGregorian();
+    applyDarkPref();
+    toggleDateInputs(); // لتطبيق الحالة الأولية
+
+    // إتاحة الدوال للعناصر
+    window.toggleDateInputs = toggleDateInputs;
+    window.convertDate = convertDate;
+    window.toggleDarkMode = toggleDarkMode;
   </script>
 </body>
 </html>
