@@ -383,8 +383,9 @@
 
   let useF = false;
   let lastTempC = null, lastWind = null, lastDesc = '—', lastIcon = '⛅';
-  let lastLat = null, lastLon = null;  // لمنع إعادة التحميل لنفس النقطة
+  let lastLat = null, lastLon = null;
   let geoWatchId = null;
+  let lastFetchAbort = null; // 👈 لإلغاء الطلبات السابقة
 
   const codeMap = {
     0:['صحو','☀️'],1:['صافٍ غالبًا','🌤️'],2:['غائم جزئيًا','⛅'],3:['غائم','☁️'],
@@ -408,28 +409,32 @@
     updEl.textContent = new Date().toLocaleString("ar-EG", { hour12:false });
   }
 
-  async function reverseGeocode(lat, lon) {
-    try {
-      // عبر دالة نتلايفي لتجنب CORS
-      const r = await fetch(`/.netlify/functions/revgeo?lat=${lat}&lon=${lon}&lang=ar`, { cache: "no-store" });
-      if (!r.ok) throw new Error("revgeo " + r.status);
-      const j = await r.json();
-      const g = j?.results?.[0];
-      if (!g) return null;
-      const parts = [g.name, g.admin1 || g.country].filter(Boolean);
-      return parts.join("، ");
-    } catch {
-      return null;
-    }
+ async function reverseGeocode(lat, lon) {
+  try {
+    const base = 'https://as3aralywm.com'; // مسار مطلق للدومين المباشر
+    const r = await fetch(`${base}/.netlify/functions/revgeo?lat=${lat}&lon=${lon}&lang=ar`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const g = j?.results?.[0];
+    if (!g) return null;
+    return [g.name, g.admin1 || g.country].filter(Boolean).join('، ');
+  } catch {
+    return null;
   }
+}
 
   async function load(lat, lon) {
     try {
       if (cityEl.textContent === 'الرياض، السعودية') cityEl.textContent = 'جاري تحديد موقعك…';
 
+      // الغِ أي طلب سابق قبل بدء طلب جديد
+      if (lastFetchAbort) { try { lastFetchAbort.abort(); } catch {} }
+      lastFetchAbort = new AbortController();
+
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
-      const res = await fetch(url, { cache: 'no-store' });
+      const res = await fetch(url, { cache: 'no-store', signal: lastFetchAbort.signal });
       if (!res.ok) throw new Error('open-meteo ' + res.status);
+
       const data = await res.json();
       const cw = data.current_weather;
       if (!cw) throw new Error('No current weather');
@@ -440,40 +445,41 @@
       lastTempC = cw.temperature;
       updateDisplay();
 
-      const nice = await reverseGeocode(lat, lon);
-      cityEl.textContent = nice || (lat === 24.7136 && lon === 46.6753 ? 'الرياض، السعودية' : `${lat.toFixed(2)}, ${lon.toFixed(2)}`);
+      // اسم المدينة (اختياري)
+      reverseGeocode(lat, lon).then(nice => {
+        if (nice) cityEl.textContent = nice;
+        else cityEl.textContent = (lat === 24.7136 && lon === 46.6753)
+          ? 'الرياض، السعودية'
+          : `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+      }).catch(()=>{});
     } catch (e) {
-      console.error(e);
-      cityEl.textContent = 'تعذّر جلب البيانات';
+      console.warn('weather load warn', e);
+      if (lastTempC == null) cityEl.textContent = 'تعذّر جلب البيانات';
     }
   }
 
-  unitBtn.addEventListener('click', () => { useF = !useF; updateDisplay(); });
-  document.getElementById('goWeather').addEventListener('click', () => { window.location.href = 'weather.html'; });
+  if (unitBtn) unitBtn.addEventListener('click', () => { useF = !useF; updateDisplay(); });
+  const goBtn = document.getElementById('goWeather');
+  if (goBtn) goBtn.addEventListener('click', () => { window.location.href = 'weather.html'; });
 
   // حمّل الافتراضي مباشرة
   load(coords.lat, coords.lon);
 
-  // ابدأ متابعة الموقع، وخُذ أول نجاح فقط
+  // ابدأ متابعة الموقع
   function startGeoWatch() {
     if (!navigator.geolocation) return;
-    const opts = { enableHighAccuracy:false, timeout:20000, maximumAge:600000 };
+    const opts = { enableHighAccuracy:false, timeout:30000, maximumAge:600000 };
     geoWatchId = navigator.geolocation.watchPosition(
       async pos => {
         const { latitude, longitude } = pos.coords;
-        // تجنب إعادة التحميل لو الإحداثيات نفسها تقريبًا
         if (lastLat !== null && Math.abs(latitude - lastLat) < 0.005 && Math.abs(longitude - lastLon) < 0.005) return;
         lastLat = latitude; lastLon = longitude;
         coords = { lat: latitude, lon: longitude };
         await load(latitude, longitude);
-        // نكتفي بأول تحديث
-        if (geoWatchId != null) {
-          navigator.geolocation.clearWatch(geoWatchId);
-          geoWatchId = null;
-        }
+        if (geoWatchId != null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
       },
       err => {
-        console.warn('geolocation error', err);
+        console.warn('geolocation warn', err);
         // نبقى على الرياض
       },
       opts
@@ -481,7 +487,6 @@
   }
   startGeoWatch();
 
-  // لو الإذن تغيّر بعد فتح الصفحة (granted لاحقًا)، أعد المحاولة تلقائيًا
   if (navigator.permissions?.query) {
     navigator.permissions.query({ name: 'geolocation' }).then(p => {
       p.onchange = () => { if (p.state === 'granted' && !geoWatchId) startGeoWatch(); };
