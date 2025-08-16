@@ -6,7 +6,7 @@ export const handler = async (event) => {
     "Access-Control-Allow-Headers": "Content-Type",
     "Content-Type": "application/json; charset=utf-8",
     // ✅ كاش نتلايفي CDN ساعة + سماح دقيقة للتحديث بالخلفية
-    "Netlify-CDN-Cache-Control": "public, s-maxage=3600, stale-while-revalidate=60",
+"Netlify-CDN-Cache-Control": "public, s-maxage=1800, stale-while-revalidate=60",
   };
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers, body: "" };
