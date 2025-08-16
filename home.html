@@ -406,21 +406,20 @@
     updEl.textContent = new Date().toLocaleString("ar-EG", { hour12:false });
   }
 
-  async function reverseGeocode(lat, lon) {
-    try {
-      const r = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=ar`,
-        { cache: 'no-store' }
-      );
-      const j = await r.json();
-      const g = j?.results?.[0];
-      if (!g) return null;
-      const parts = [g.name, g.admin1 || g.country].filter(Boolean);
-      return parts.join('، ');
-    } catch {
-      return null;
-    }
+async function reverseGeocode(lat, lon) {
+  try {
+    const r = await fetch(`/.netlify/functions/revgeo?lat=${lat}&lon=${lon}&lang=ar`, { cache: "no-store" });
+    if (!r.ok) throw new Error("revgeo " + r.status);
+    const j = await r.json();
+    const g = j?.results?.[0];
+    if (!g) return null;
+    const parts = [g.name, g.admin1 || g.country].filter(Boolean);
+    return parts.join("، ");
+  } catch {
+    return null;
   }
+}
+
 
   async function load(lat, lon) {
     // لو اسم المدينة لسه ما تحدد، أظهر "جاري التحديد…" كتنبيه بصري
@@ -527,59 +526,64 @@
   </script>
 
   <!-- سكربت تحميل الهاشتاقات (جديد) -->
-  <script>
-  async function loadTrends() {
-    const list = document.getElementById("trends-list");
-    const foot = document.getElementById("trends-foot");
-    if (!list || !foot) return;
+ <script>
+async function loadTrends() {
+  const list = document.getElementById("trends-list");
+  const foot = document.getElementById("trends-foot");
+  if (!list || !foot) return; // 👈 حماية لو الصندوق مش موجود/لم يُنشأ بعد
 
-    list.innerHTML = "<li>جاري التحميل...</li>";
-    foot.textContent = "";
+  list.innerHTML = "<li>جاري التحميل...</li>";
+  foot.textContent = "";
 
-    try {
-      const r = await fetch("/.netlify/functions/x-trends?limit=10", { cache: "no-store" });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const data = await r.json();
-      const arr = Array.isArray(data) ? data : (data.trends || []);
+  try {
+    const r = await fetch("/.netlify/functions/x-trends?limit=10", { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : (data.trends || []);
 
-      list.innerHTML = "";
-      if (!arr.length) { list.innerHTML = "<li>لا توجد نتائج حالياً.</li>"; return; }
+    list.innerHTML = "";
+    if (!arr.length) { list.innerHTML = "<li>لا توجد نتائج حالياً.</li>"; return; }
 
-      arr.forEach((t, i) => {
-        const tag = (t.name || "").trim();
-        if (!tag) return;
-        const label = tag.startsWith("#") ? tag : `#${tag}`;
+    arr.forEach((t, i) => {
+      const tag = (t.name || "").trim();
+      if (!tag) return;
+      const label = tag.startsWith("#") ? tag : `#${tag}`;
 
-        const a = document.createElement("a");
-        a.href = "https://x.com/search?q=" + encodeURIComponent(label) + "&src=trend_click";
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        a.className = "hash-link";
-        a.textContent = `${i+1}. ${label.replace(/^#/, "")}`;
+      const a = document.createElement("a");
+      a.href = "https://x.com/search?q=" + encodeURIComponent(label) + "&src=trend_click";
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.className = "hash-link";
+      a.textContent = `${i+1}. ${label.replace(/^#/, "")}`;
 
-        const right = document.createElement("span");
-        right.className = "muted";
-        if (t.tweet_volume) right.textContent = ` — ${Number(t.tweet_volume).toLocaleString("ar-SA")} تغريدة`;
+      const right = document.createElement("span");
+      right.className = "muted";
+      if (t.tweet_volume) right.textContent = ` — ${Number(t.tweet_volume).toLocaleString("ar-SA")} تغريدة`;
 
-        const li = document.createElement("li");
-        li.style.display = "flex";
-        li.style.justifyContent = "space-between";
-        li.style.alignItems = "center";
-        li.appendChild(a);
-        li.appendChild(right);
-        list.appendChild(li);
-      });
+      const li = document.createElement("li");
+      li.style.display = "flex";
+      li.style.justifyContent = "space-between";
+      li.style.alignItems = "center";
+      li.appendChild(a);
+      li.appendChild(right);
+      list.appendChild(li);
+    });
 
-      const xCache = r.headers.get("X-Cache") || "";
-      foot.textContent = `آخر تحديث: ${new Date().toLocaleString("ar-SA")}${xCache ? ` — المصدر: ${xCache}` : ""}`;
-    } catch (e) {
-      console.error(e);
-      list.innerHTML = "<li>تعذّر جلب الترند الآن.</li>";
-    }
+    const xCache = r.headers.get("X-Cache") || "";
+    foot.textContent = `آخر تحديث: ${new Date().toLocaleString("ar-SA")}${xCache ? ` — المصدر: ${xCache}` : ""}`;
+  } catch (e) {
+    console.error(e);
+    list.innerHTML = "<li>تعذّر جلب الترند الآن.</li>";
   }
+}
+
+// 👇 بدّل النداءات المباشرة بهذا
+document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("refreshTrends")?.addEventListener("click", loadTrends);
   loadTrends();
   setInterval(loadTrends, 30 * 60 * 1000);
-  </script>
+});
+</script>
+
 </body>
 </html>
