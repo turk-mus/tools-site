@@ -18,6 +18,11 @@
     gtag('config', 'G-D8W8C8PYS9');
   </script>
 
+  <!-- Tajawal font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+
   <style>
     body {
       font-family: 'Tajawal', sans-serif;
@@ -167,6 +172,21 @@
         flex: 1 1 100%;
       }
     }
+
+    /* === Hashtags card ONLY (جديد) === */
+    .hashtags-card .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+    .dark-mode .hashtags-card .row{border-bottom:1px solid rgba(255,255,255,.06)}
+    .hashtags-list{list-style:none;margin:0;padding:0}
+    .hashtags-list li{padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+    .dark-mode .hashtags-list li{border-bottom:1px solid rgba(255,255,255,.06)}
+    .hash-link{color:#006c35;text-decoration:none;font-weight:700}
+    .hash-link:hover{text-decoration:underline}
+    .dark-mode .hash-link{color:#6ef19d}
+    .muted{font-size:12px;opacity:.75}
+
+    /* shared card style already defined below for weather; reuse */
+    .card{border-radius:18px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px; margin-bottom:22px;}
+    .dark-mode .card{background:#1c1c1c}
   </style>
 </head>
 <body>
@@ -182,263 +202,173 @@
 
     <!-- ✅ صندوق أسعار الذهب والديناميكية -->
     <div class="info-boxes">
-  <div class="info-box">
-    <h3>💰 أسعار الذهب</h3>
-    <ul id="gold-prices">
-      <li>جاري تحميل الأسعار...</li>
-    </ul>
-    <div style="text-align:left; margin-top:10px;">
-      <a href="gold.html" class="btn" style="font-size:14px; padding:6px 10px;">مزيد ➝</a>
-    </div>
-  </div>
+      <div class="info-box">
+        <h3>💰 أسعار الذهب</h3>
+        <ul id="gold-prices">
+          <li>جاري تحميل الأسعار...</li>
+        </ul>
+        <div style="text-align:left; margin-top:10px;">
+          <a href="gold.html" class="btn" style="font-size:14px; padding:6px 10px;">مزيد ➝</a>
+        </div>
+      </div>
 
-  <div class="info-box">
-    <h3>⛽ أسعار الوقود</h3>
-    <ul>
-      <li>بنزين 91: 2.18 ريال</li>
-      <li>بنزين 95: 2.33 ريال</li>
-      <li>ديزل: 0.75 ريال</li>
-    </ul>
-    <div style="text-align:left; margin-top:10px;">
-      <a href="fuel.html" class="btn" style="font-size:14px; padding:6px 10px;">مزيد ➝</a>
-    </div>
-  </div>
-</div>
-
-<!-- ====== Hashtags Card ====== -->
-<style>
-  .hashtags-card .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}
-  .dark-mode .hashtags-card .row{border-bottom:1px solid rgba(255,255,255,.06)}
-  .hashtags-list{list-style:none;margin:0;padding:0}
-  .hashtags-list li{padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06)}
-  .dark-mode .hashtags-list li{border-bottom:1px solid rgba(255,255,255,.06)}
-  .hash-link{color:#006c35;text-decoration:none;font-weight:700}
-  .dark-mode .hash-link{color:#6ef19d}
-  .muted{font-size:12px;opacity:.75}
-</style>
-
-<script>
-async function loadTrends() {
-  const list = document.getElementById("trends-list");
-  const foot = document.getElementById("trends-foot");
-  list.innerHTML = "<li>جاري التحميل...</li>";
-  foot.textContent = "";
-
-  try {
-    const r = await fetch("/.netlify/functions/x-trends?limit=10");
-    if (!r.ok) throw new Error("HTTP " + r.status);
-
-    const data = await r.json();
-    // الدالة قد ترجع مصفوفة مباشرة أو كائن فيه trends
-    const arr = Array.isArray(data) ? data : (data.trends || []);
-
-    list.innerHTML = "";
-    if (!arr.length) {
-      list.innerHTML = "<li>لا توجد نتائج حالياً.</li>";
-      return;
-    }
-
-    arr.forEach((t, i) => {
-      const tag = (t.name || "").trim();
-      const label = tag.startsWith("#") ? tag : `#${tag}`;
-
-      const a = document.createElement("a");
-      a.href = "https://x.com/search?q=" + encodeURIComponent(label) + "&src=trend_click";
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.className = "hover:underline";
-      a.textContent = `${i+1}. ${label.replace(/^#/, "")}`;
-
-      const right = document.createElement("span");
-      right.className = "opacity-70";
-      if (t.tweet_volume) right.textContent = ` — ${Number(t.tweet_volume).toLocaleString("ar-SA")} تغريدة`;
-
-      const li = document.createElement("li");
-      li.className = "flex items-center justify-between";
-      li.appendChild(a);
-      li.appendChild(right);
-      list.appendChild(li);
-    });
-
-    // ملاحظة: دالتنا لا ترجع updated_at. سنعرض وقت العرض + مصدر الكاش من الهيدر.
-    const xCache = r.headers.get("X-Cache") || "";
-    const when = new Date().toLocaleString("ar-SA");
-    foot.textContent = `آخر تحديث: ${when} ${xCache ? `— المصدر: ${xCache}` : ""}`;
-  } catch (e) {
-    console.error(e);
-    list.innerHTML = "<li>تعذّر جلب الترند الآن.</li>";
-  }
-}
-
-document.getElementById("refreshTrends")?.addEventListener("click", loadTrends);
-// تحديث أولي + كل 30 دقيقة (نفس مدة الكاش)
-loadTrends();
-setInterval(loadTrends, 30 * 60 * 1000);
-</script>
-
-
-
-<!-- ====== Salaries Card (no API) ====== -->
-<style>
-  .salary-card .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}
-  .dark-mode .salary-card .row{border-bottom:1px solid rgba(255,255,255,.06)}
-  .salary-name{font-weight:700}
-  .salary-date{font-size:13px;color:#666}
-  .dark-mode .salary-date{color:#aaa}
-  .salary-left{font-weight:700}
-  .salary-actions{display:flex;gap:8px}
-  .salary-btn{background:#006c35;color:#fff;border:none;border-radius:16px;padding:6px 10px;cursor:pointer}
-  .salary-btn:hover{background:#008f4c}
-</style>
-
-<div class="card salary-card" dir="rtl" lang="ar">
-  <div class="weather-header">
-    <div>
-      <div class="weather-title">الرواتب</div>
-      <div class="weather-meta">أقرب موعدين للصرف</div>
-    </div>
-    <div class="salary-actions">
-      <button class="salary-btn" id="goSalaries">عرض جدول الرواتب</button>
-    </div>
-  </div>
-
-  <div class="row">
-    <div>
-      <div class="salary-name">موظفو الحكومة</div>
-      <div class="salary-date" id="sal1-date">—</div>
-    </div>
-    <div class="salary-left" id="sal1-left">— يوم</div>
-  </div>
-
-  <div class="row" style="border-bottom:none;">
-    <div>
-      <div class="salary-name">المتقاعدون</div>
-      <div class="salary-date" id="sal2-date">—</div>
-    </div>
-    <div class="salary-left" id="sal2-left">— يوم</div>
-  </div>
-
-  <div class="weather-meta">آخر تحديث: <span id="sal-updated">—</span></div>
-</div>
-
-<script>
-(() => {
-  // إعدادات الرواتب (يمكنك تعديل الأيام بسهولة لاحقًا)
-  const GOV_DAY  = 27; // الموظفون الحكوميون: يوم 27 ميلادي
-  const RET_DAY  = 25; // المتقاعدون: يوم 25 ميلادي
-
-  const el = id => document.getElementById(id);
-  const sal1Date = el('sal1-date'), sal1Left = el('sal1-left');
-  const sal2Date = el('sal2-date'), sal2Left = el('sal2-left');
-  const updEl = el('sal-updated');
-
-  function nextPayday(dayOfMonth){
-    const now = new Date();
-    // تاريخ هذا الشهر في نفس اليوم
-    const d = new Date(now.getFullYear(), now.getMonth(), dayOfMonth, 0, 0, 0);
-    // إذا فات اليوم أو غير موجود (مثلاً فبراير 30)، انتقل للشهر القادم
-    if (isNaN(d.getTime()) || d < startOfDay(now)) {
-      const next = new Date(now.getFullYear(), now.getMonth()+1, dayOfMonth, 0, 0, 0);
-      // معالجة لو كان اليوم غير موجود في الشهر القادم (نادراً لما نستخدم 25/27)
-      return isNaN(next.getTime()) ? lastValidDayOfMonth(next.getFullYear(), next.getMonth()) : next;
-    }
-    return d;
-  }
-
-  function startOfDay(dt){
-    return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0);
-  }
-
-  function daysBetween(a, b){
-    const ms = startOfDay(b) - startOfDay(a);
-    return Math.max(0, Math.round(ms / 86400000)); // 1000*60*60*24
-  }
-
-  function lastValidDayOfMonth(year, monthIndex){
-    // يرجع آخر يوم صالح في الشهر
-    const last = new Date(year, monthIndex + 1, 0);
-    return last;
-  }
-
-  function fmtDateAr(d){
-    return d.toLocaleDateString('ar-EG', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  }
-
-  function render(){
-    const now = new Date();
-
-    const gov = nextPayday(GOV_DAY);
-    const ret = nextPayday(RET_DAY);
-
-    sal1Date.textContent = fmtDateAr(gov) + ' (27 من كل شهر)';
-    sal2Date.textContent = fmtDateAr(ret) + ' (25 من كل شهر)';
-
-    sal1Left.textContent = daysBetween(now, gov) + ' يوم';
-    sal2Left.textContent = daysBetween(now, ret) + ' يوم';
-
-    updEl.textContent = now.toLocaleString('ar-EG', { hour12:false });
-  }
-
-  // زر الذهاب لصفحة الرواتب
-  document.getElementById('goSalaries').addEventListener('click', () => {
-    window.location.href = 'salaries.html'; // عدّل المسار حسب صفحتك
-  });
-
-  render();
-})();
-</script>
-
-
-<!-- ====== Weather Card (no API key) ====== -->
-<style>
-  .card{border-radius:18px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px; margin-bottom:22px;}
-  .dark-mode .card{background:#1c1c1c}
-  .weather-card{display:flex;flex-direction:column;gap:10px}
-  .weather-header{display:flex;justify-content:space-between;align-items:center}
-  .weather-title{font-weight:700;color:#006c35}
-  .dark-mode .weather-title{color:#6ef19d}
-  .weather-meta{font-size:12px;color:#777}
-  .dark-mode .weather-meta{color:#aaa}
-  .weather-main{display:flex;align-items:center;gap:12px}
-  .weather-icon{font-size:30px}
-  .weather-temp{font-size:28px;font-weight:700}
-  .weather-sub{display:flex;gap:10px;color:#555;font-size:13px}
-  .dark-mode .weather-sub{color:#bbb}
-  .weather-btn{background:#006c35;color:#fff;border:none;border-radius:16px;padding:6px 10px;cursor:pointer}
-  .weather-btn:hover{background:#008f4c}
-</style>
-
-<div class="card weather-card" id="weather-card" dir="rtl" lang="ar">
-  <div class="weather-header">
-    <div>
-      <div class="weather-title">الطقس الآن</div>
-      <div class="weather-meta" id="weather-city">—</div> <!-- اسم المدينة -->
-    </div>
-    <div style="display:flex; gap:5px;">
-      <button class="weather-btn" id="unitBtn" aria-label="تبديل وحدة القياس">°C</button>
-      <button class="weather-btn" id="goWeather" aria-label="الذهاب لصفحة الطقس">صفحة الطقس</button>
-    </div>
-  </div>
-
-  <div class="weather-main">
-    <div class="weather-icon" id="weather-icon">⛅</div>
-    <div>
-      <div class="weather-temp"><span id="temp">--</span>°<span id="unit">C</span></div>
-      <div class="weather-sub">
-        <span id="desc">—</span>
-        <span>•</span>
-        <span>رياح: <span id="wind">--</span> كم/س</span>
+      <div class="info-box">
+        <h3>⛽ أسعار الوقود</h3>
+        <ul>
+          <li>بنزين 91: 2.18 ريال</li>
+          <li>بنزين 95: 2.33 ريال</li>
+          <li>ديزل: 0.75 ريال</li>
+        </ul>
+        <div style="text-align:left; margin-top:10px;">
+          <a href="fuel.html" class="btn" style="font-size:14px; padding:6px 10px;">مزيد ➝</a>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="weather-meta">آخر تحديث: <span id="wx-updated">—</span></div>
-</div>
+    <!-- ✅ صندوق الترندات (مضاف فقط) -->
+    <section class="card hashtags-card" id="x-trends" dir="rtl" lang="ar" style="margin-top:22px;">
+      <div class="row" style="border-bottom:none; padding:0;">
+        <h3 style="margin:0;color:#006c35"># أعلى 10 ترندات في السعودية</h3>
+        <button id="refreshTrends" class="weather-btn" aria-label="تحديث الترندات">تحديث</button>
+      </div>
+      <ul id="trends-list" class="hashtags-list">
+        <li>جاري التحميل...</li>
+      </ul>
+      <p id="trends-foot" class="muted" style="margin-top:6px"></p>
+    </section>
+
+    <!-- ====== Salaries Card (no API) ====== -->
+    <style>
+      .salary-card .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+      .dark-mode .salary-card .row{border-bottom:1px solid rgba(255,255,255,.06)}
+      .salary-name{font-weight:700}
+      .salary-date{font-size:13px;color:#666}
+      .dark-mode .salary-date{color:#aaa}
+      .salary-left{font-weight:700}
+      .salary-actions{display:flex;gap:8px}
+      .salary-btn{background:#006c35;color:#fff;border:none;border-radius:16px;padding:6px 10px;cursor:pointer}
+      .salary-btn:hover{background:#008f4c}
+    </style>
+
+    <div class="card salary-card" dir="rtl" lang="ar">
+      <div class="weather-header">
+        <div>
+          <div class="weather-title">الرواتب</div>
+          <div class="weather-meta">أقرب موعدين للصرف</div>
+        </div>
+        <div class="salary-actions">
+          <button class="salary-btn" id="goSalaries">عرض جدول الرواتب</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="salary-name">موظفو الحكومة</div>
+          <div class="salary-date" id="sal1-date">—</div>
+        </div>
+        <div class="salary-left" id="sal1-left">— يوم</div>
+      </div>
+
+      <div class="row" style="border-bottom:none;">
+        <div>
+          <div class="salary-name">المتقاعدون</div>
+          <div class="salary-date" id="sal2-date">—</div>
+        </div>
+        <div class="salary-left" id="sal2-left">— يوم</div>
+      </div>
+
+      <div class="weather-meta">آخر تحديث: <span id="sal-updated">—</span></div>
+    </div>
+
+    <script>
+    (() => {
+      const GOV_DAY  = 27; // الموظفون الحكوميون: يوم 27 ميلادي
+      const RET_DAY  = 25; // المتقاعدون: يوم 25 ميلادي
+
+      const el = id => document.getElementById(id);
+      const sal1Date = el('sal1-date'), sal1Left = el('sal1-left');
+      const sal2Date = el('sal2-date'), sal2Left = el('sal2-left');
+      const updEl = el('sal-updated');
+
+      function nextPayday(dayOfMonth){
+        const now = new Date();
+        const d = new Date(now.getFullYear(), now.getMonth(), dayOfMonth, 0, 0, 0);
+        if (isNaN(d.getTime()) || d < startOfDay(now)) {
+          const next = new Date(now.getFullYear(), now.getMonth()+1, dayOfMonth, 0, 0, 0);
+          return isNaN(next.getTime()) ? lastValidDayOfMonth(next.getFullYear(), next.getMonth()) : next;
+        }
+        return d;
+      }
+      function startOfDay(dt){ return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0); }
+      function daysBetween(a, b){ const ms = startOfDay(b) - startOfDay(a); return Math.max(0, Math.round(ms / 86400000)); }
+      function lastValidDayOfMonth(y, m){ return new Date(y, m + 1, 0); }
+      function fmtDateAr(d){ return d.toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' }); }
+
+      function render(){
+        const now = new Date();
+        const gov = nextPayday(GOV_DAY);
+        const ret = nextPayday(RET_DAY);
+
+        sal1Date.textContent = fmtDateAr(gov) + ' (27 من كل شهر)';
+        sal2Date.textContent = fmtDateAr(ret) + ' (25 من كل شهر)';
+
+        sal1Left.textContent = daysBetween(now, gov) + ' يوم';
+        sal2Left.textContent = daysBetween(now, ret) + ' يوم';
+
+        updEl.textContent = now.toLocaleString('ar-EG', { hour12:false });
+      }
+
+      document.getElementById('goSalaries').addEventListener('click', () => {
+        window.location.href = 'salaries.html';
+      });
+
+      render();
+    })();
+    </script>
+
+    <!-- ====== Weather Card (no API key) ====== -->
+    <style>
+      .weather-card{display:flex;flex-direction:column;gap:10px}
+      .weather-header{display:flex;justify-content:space-between;align-items:center}
+      .weather-title{font-weight:700;color:#006c35}
+      .dark-mode .weather-title{color:#6ef19d}
+      .weather-meta{font-size:12px;color:#777}
+      .dark-mode .weather-meta{color:#aaa}
+      .weather-main{display:flex;align-items:center;gap:12px}
+      .weather-icon{font-size:30px}
+      .weather-temp{font-size:28px;font-weight:700}
+      .weather-sub{display:flex;gap:10px;color:#555;font-size:13px}
+      .dark-mode .weather-sub{color:#bbb}
+      .weather-btn{background:#006c35;color:#fff;border:none;border-radius:16px;padding:6px 10px;cursor:pointer}
+      .weather-btn:hover{background:#008f4c}
+    </style>
+
+    <div class="card weather-card" id="weather-card" dir="rtl" lang="ar">
+      <div class="weather-header">
+        <div>
+          <div class="weather-title">الطقس الآن</div>
+          <div class="weather-meta" id="weather-city">—</div>
+        </div>
+        <div style="display:flex; gap:5px;">
+          <button class="weather-btn" id="unitBtn" aria-label="تبديل وحدة القياس">°C</button>
+          <button class="weather-btn" id="goWeather" aria-label="الذهاب لصفحة الطقس">صفحة الطقس</button>
+        </div>
+      </div>
+
+      <div class="weather-main">
+        <div class="weather-icon" id="weather-icon">⛅</div>
+        <div>
+          <div class="weather-temp"><span id="temp">--</span>°<span id="unit">C</span></div>
+          <div class="weather-sub">
+            <span id="desc">—</span>
+            <span>•</span>
+            <span>رياح: <span id="wind">--</span> كم/س</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="weather-meta">آخر تحديث: <span id="wx-updated">—</span></div>
+    </div>
 
 <script>
 (() => {
@@ -447,14 +377,13 @@ setInterval(loadTrends, 30 * 60 * 1000);
         iconEl = el('weather-icon'), descEl = el('desc'), windEl = el('wind'), updEl = el('wx-updated'),
         unitBtn = el('unitBtn');
 
-  // الحالة
-  let useF = false;                  // هل نعرض فهرنهايت؟
-  let coords = { lat: 24.7136, lon: 46.6753 }; // افتراضي: الرياض
-  let lastTempC = null;              // نخزن الحرارة مئوية مرة واحدة
-  let lastWind = null;               // نخزن سرعة الرياح (كم/س)
-  let lastDesc = '—', lastIcon = '⛅';
+  // افتراضي: الرياض + أعرضه فورًا (يتحدّث لاحقًا عند نجاح تحديد الموقع)
+  let coords = { lat: 24.7136, lon: 46.6753 };
+  cityEl.textContent = 'الرياض، السعودية';
 
-  // خريطة أكواد الطقس لوصف/أيقونة
+  let useF = false;
+  let lastTempC = null, lastWind = null, lastDesc = '—', lastIcon = '⛅';
+
   const codeMap = {
     0:['صحو','☀️'],1:['صافٍ غالبًا','🌤️'],2:['غائم جزئيًا','⛅'],3:['غائم','☁️'],
     45:['ضباب','🌫️'],48:['ضباب','🌫️'],51:['رذاذ خفيف','🌦️'],53:['رذاذ','🌦️'],55:['رذاذ كثيف','🌧️'],
@@ -465,13 +394,12 @@ setInterval(loadTrends, 30 * 60 * 1000);
   };
   const wx = code => codeMap[code] || ['الطقس','🌡️'];
 
-  // تنسيق العرض حسب الوحدة الحالية
   function updateDisplay() {
     if (lastTempC == null) return;
     const t = useF ? Math.round(lastTempC * 9/5 + 32) : Math.round(lastTempC);
     tempEl.textContent = t;
     unitEl.textContent = useF ? 'F' : 'C';
-    unitBtn.textContent = useF ? '°C' : '°F'; // الزر يتبدّل أيضًا
+    unitBtn.textContent = useF ? '°C' : '°F';
     iconEl.textContent = lastIcon;
     descEl.textContent = lastDesc;
     if (lastWind != null) windEl.textContent = Math.round(lastWind);
@@ -486,15 +414,18 @@ setInterval(loadTrends, 30 * 60 * 1000);
       );
       const j = await r.json();
       const g = j?.results?.[0];
-      if (!g) return 'الموقع';
+      if (!g) return null;
       const parts = [g.name, g.admin1 || g.country].filter(Boolean);
       return parts.join('، ');
     } catch {
-      return 'الموقع';
+      return null;
     }
   }
 
   async function load(lat, lon) {
+    // لو اسم المدينة لسه ما تحدد، أظهر "جاري التحديد…" كتنبيه بصري
+    if (cityEl.textContent === 'الرياض، السعودية') cityEl.textContent = 'جاري تحديد موقعك…';
+
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
     const res = await fetch(url, { cache: 'no-store' });
     const data = await res.json();
@@ -502,45 +433,50 @@ setInterval(loadTrends, 30 * 60 * 1000);
     if (!cw) throw new Error('No current weather');
 
     const [d, ic] = wx(cw.weathercode);
-    lastDesc = d;
-    lastIcon = ic;
+    lastDesc = d; lastIcon = ic;
     lastWind = cw.windspeed;
     lastTempC = cw.temperature;
-
     updateDisplay();
-    cityEl.textContent = await reverseGeocode(lat, lon);
+
+    // جرّب العكس الجغرافي، ولو فشل ارجع للاسم الافتراضي
+    const nice = await reverseGeocode(lat, lon);
+    cityEl.textContent = nice || (lat === 24.7136 && lon === 46.6753 ? 'الرياض، السعودية' : `${lat.toFixed(2)}, ${lon.toFixed(2)}`);
   }
 
-  unitBtn.addEventListener('click', () => {
-    useF = !useF;
-    updateDisplay();
-  });
+  unitBtn.addEventListener('click', () => { useF = !useF; updateDisplay(); });
+  document.getElementById('goWeather').addEventListener('click', () => { window.location.href = 'weather.html'; });
 
-  // زر الذهاب لصفحة الطقس
-  document.getElementById('goWeather').addEventListener('click', () => {
-    window.location.href = 'weather.html'; // عدل المسار حسب موقع صفحتك
-  });
+  // ❶ حمّل فورًا على الافتراضي (الرياض) كي لا يبقى "—"
+  load(coords.lat, coords.lon).catch(() => { cityEl.textContent = 'تعذّر جلب البيانات'; });
 
-  function start(lat, lon){
-    coords = {lat, lon};
-    load(lat, lon).catch(() => { 
-      cityEl.textContent='تعذّر جلب البيانات';
-    });
-  }
-
+  // ❷ حاول تحديد الموقع مع مهلة، ولو نجح حدّث المدينة/الطقس
   if (navigator.geolocation) {
+    const options = { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 };
+    let settled = false;
+
     navigator.geolocation.getCurrentPosition(
-      pos => start(pos.coords.latitude, pos.coords.longitude),
-      ()  => start(coords.lat, coords.lon)
+      async pos => {
+        if (settled) return;
+        settled = true;
+        const { latitude, longitude } = pos.coords;
+        coords = { lat: latitude, lon: longitude };
+        try { await load(latitude, longitude); } catch {}
+      },
+      async () => {
+        if (settled) return;
+        settled = true;
+        // نبقى على الافتراضي (الرياض) الذي حمّلناه بالفعل
+      },
+      options
     );
-  } else {
-    start(coords.lat, coords.lon);
+
+    // مهلة احتياطية: لو الـGPS تأخر كثير، لا نغيّر شيء (الرياض معروضة)
+    setTimeout(() => { settled = true; }, options.timeout + 1000);
   }
 })();
 </script>
 
 
-    
     <div class="buttons">
       <a href="gold.html" class="btn">💰 أسعار الذهب</a>
       <a href="fuel.html" class="btn">⛽ أسعار الوقود</a>
@@ -588,6 +524,62 @@ setInterval(loadTrends, 30 * 60 * 1000);
     }
 
     fetchGoldPrices();
+  </script>
+
+  <!-- سكربت تحميل الهاشتاقات (جديد) -->
+  <script>
+  async function loadTrends() {
+    const list = document.getElementById("trends-list");
+    const foot = document.getElementById("trends-foot");
+    if (!list || !foot) return;
+
+    list.innerHTML = "<li>جاري التحميل...</li>";
+    foot.textContent = "";
+
+    try {
+      const r = await fetch("/.netlify/functions/x-trends?limit=10", { cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const data = await r.json();
+      const arr = Array.isArray(data) ? data : (data.trends || []);
+
+      list.innerHTML = "";
+      if (!arr.length) { list.innerHTML = "<li>لا توجد نتائج حالياً.</li>"; return; }
+
+      arr.forEach((t, i) => {
+        const tag = (t.name || "").trim();
+        if (!tag) return;
+        const label = tag.startsWith("#") ? tag : `#${tag}`;
+
+        const a = document.createElement("a");
+        a.href = "https://x.com/search?q=" + encodeURIComponent(label) + "&src=trend_click";
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.className = "hash-link";
+        a.textContent = `${i+1}. ${label.replace(/^#/, "")}`;
+
+        const right = document.createElement("span");
+        right.className = "muted";
+        if (t.tweet_volume) right.textContent = ` — ${Number(t.tweet_volume).toLocaleString("ar-SA")} تغريدة`;
+
+        const li = document.createElement("li");
+        li.style.display = "flex";
+        li.style.justifyContent = "space-between";
+        li.style.alignItems = "center";
+        li.appendChild(a);
+        li.appendChild(right);
+        list.appendChild(li);
+      });
+
+      const xCache = r.headers.get("X-Cache") || "";
+      foot.textContent = `آخر تحديث: ${new Date().toLocaleString("ar-SA")}${xCache ? ` — المصدر: ${xCache}` : ""}`;
+    } catch (e) {
+      console.error(e);
+      list.innerHTML = "<li>تعذّر جلب الترند الآن.</li>";
+    }
+  }
+  document.getElementById("refreshTrends")?.addEventListener("click", loadTrends);
+  loadTrends();
+  setInterval(loadTrends, 30 * 60 * 1000);
   </script>
 </body>
 </html>
