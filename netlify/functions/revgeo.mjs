@@ -1,14 +1,21 @@
-// netlify/functions/revgeo.mjs
+// revgeo.mjs
 export const handler = async (event) => {
+  const baseHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 204, headers: baseHeaders, body: "" };
+  }
+
   try {
-    const qs  = new URLSearchParams(event.queryStringParameters || {});
-    const lat = qs.get("lat");
-    const lon = qs.get("lon");
-    const lang = qs.get("lang") || "ar";
+    const { lat, lon, lang = "ar" } = event.queryStringParameters || {};
     if (!lat || !lon) {
       return {
         statusCode: 400,
-        headers: { "Access-Control-Allow-Origin": "*" },
+        headers: baseHeaders,
         body: '{"error":"lat & lon required"}'
       };
     }
@@ -20,8 +27,8 @@ export const handler = async (event) => {
     return {
       statusCode: r.status,
       headers: {
-        "Content-Type": r.headers.get("content-type") || "application/json",
-        "Access-Control-Allow-Origin": "*",
+        ...baseHeaders,
+        "Content-Type": r.headers.get("content-type") || "application/json; charset=utf-8",
         "Cache-Control": "public, max-age=300"
       },
       body: txt
@@ -29,8 +36,8 @@ export const handler = async (event) => {
   } catch (e) {
     return {
       statusCode: 500,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ error: e.message })
+      headers: baseHeaders,
+      body: JSON.stringify({ error: e?.message || "revgeo failed" })
     };
   }
 };
