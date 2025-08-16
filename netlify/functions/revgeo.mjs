@@ -1,26 +1,30 @@
-// Proxy لـ Open-Meteo reverse geocoding مع CORS
+// netlify/functions/revgeo.mjs
 export const handler = async (event) => {
   try {
-    const qs = new URLSearchParams(event.queryStringParameters || {});
+    const qs  = new URLSearchParams(event.queryStringParameters || {});
     const lat = qs.get("lat");
     const lon = qs.get("lon");
     const lang = qs.get("lang") || "ar";
     if (!lat || !lon) {
-      return { statusCode: 400, headers: { "Access-Control-Allow-Origin": "*" }, body: '{"error":"lat & lon required"}' };
+      return {
+        statusCode: 400,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: '{"error":"lat & lon required"}'
+      };
     }
 
     const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&language=${encodeURIComponent(lang)}`;
-    const res = await fetch(url);
-    const text = await res.text();
+    const r   = await fetch(url);
+    const txt = await r.text();
 
     return {
-      statusCode: res.status,
+      statusCode: r.status,
       headers: {
-        "Content-Type": res.headers.get("content-type") || "application/json",
+        "Content-Type": r.headers.get("content-type") || "application/json",
         "Access-Control-Allow-Origin": "*",
         "Cache-Control": "public, max-age=300"
       },
-      body: text
+      body: txt
     };
   } catch (e) {
     return {
