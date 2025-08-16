@@ -1,4 +1,4 @@
-// revgeo.mjs
+// netlify/functions/revgeo.mjs
 export const handler = async (event) => {
   const baseHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -10,14 +10,19 @@ export const handler = async (event) => {
     return { statusCode: 204, headers: baseHeaders, body: "" };
   }
 
+  // ✅ مسار فحص سريع: https://as3aralywm.com/.netlify/functions/revgeo?ping=1
+  if (event.queryStringParameters?.ping === "1") {
+    return {
+      statusCode: 200,
+      headers: { ...baseHeaders, "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ ok: true, msg: "revgeo alive" })
+    };
+  }
+
   try {
     const { lat, lon, lang = "ar" } = event.queryStringParameters || {};
     if (!lat || !lon) {
-      return {
-        statusCode: 400,
-        headers: baseHeaders,
-        body: '{"error":"lat & lon required"}'
-      };
+      return { statusCode: 400, headers: baseHeaders, body: '{"error":"lat & lon required"}' };
     }
 
     const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&language=${encodeURIComponent(lang)}`;
