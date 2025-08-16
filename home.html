@@ -283,7 +283,7 @@
     <script>
     (() => {
       const GOV_DAY  = 27; // الموظفون الحكوميون: يوم 27 ميلادي
-      const RET_DAY  = 25; // المتقاعدون: يوم 25 ميلادي
+      const RET_DAY  = 1; // المتقاعدون: يوم 1 ميلادي
 
       const el = id => document.getElementById(id);
       const sal1Date = el('sal1-date'), sal1Left = el('sal1-left');
@@ -310,7 +310,7 @@
         const ret = nextPayday(RET_DAY);
 
         sal1Date.textContent = fmtDateAr(gov) + ' (27 من كل شهر)';
-        sal2Date.textContent = fmtDateAr(ret) + ' (25 من كل شهر)';
+        sal2Date.textContent = fmtDateAr(ret) + ' (1 من كل شهر)';
 
         sal1Left.textContent = daysBetween(now, gov) + ' يوم';
         sal2Left.textContent = daysBetween(now, ret) + ' يوم';
@@ -503,6 +503,8 @@
       <a href="history.html" class="btn">📅 تحويل بين الهجري والميلادي</a>
       <a href="VAT.html" class="btn">💸 ضريبة القيمة المضافة</a>
       <a href="retirement.html" class="btn">🏦 حاسبة التقاعد</a>
+      <a href="/articles/" class="btn">📰 المقالات</a>
+
     </div>
 
     <!-- ✅ روابط السياسة والتواصل -->
