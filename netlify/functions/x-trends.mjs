@@ -1,108 +1,127 @@
-// netlify/functions/ksa-trends.mjs
-export const handler = async () => {
-  const X_BEARER  = process.env.X_BEARER;         // (اختياري) مفتاح X الرسمي
-  const RAPID_KEY = process.env.RAPIDAPI_KEY;     // (اختياري) RapidAPI
-  const RAPID_HOST= process.env.RAPIDAPI_HOST || 'twitter-trends-by-location.p.rapidapi.com';
-  const KSA_WOEID = 23424938;
+// /netlify/functions/x-trends.mjs
+import fetch from "node-fetch";
 
-  // 1) القائمة البيضاء: عدّلها بحرّيتك (كلها بدون #)
-  // ملاحظة: نطبّق "تطبيع" للنص قبل المقارنة (إزالة تشكيل/هاش/مسافات…)
-  const ALLOWLIST = [
-    // أمثلة عامة آمنة
-    'السعودية','اليوم_الوطني','الذهب','الطقس','الرياض','جدة','مكة',
-    // رياضة (أمثلة)
-    'الهلال','النصر','الاتحاد','الأهلي','الدوري_السعودي',
-    // تكنولوجيا / تعليم
-    'تقنية','تعليم','برمجة',
-  ].map(normalizeTag);
+// مزود RapidAPI الذي اخترته (من صورتك)
+const HOST = "twitter-trends-by-location.p.rapidapi.com";
 
-  // 2) قائمة احتياط آمنة (نستخدمها لملء الخانات الناقصة)
-  const SAFE_FALLBACK = [
-    '#السعودية', '#الذهب', '#الطقس', '#الرياض', '#جدة',
-    '#مكة', '#الهلال', '#النصر', '#الاتحاد', '#الأهلي'
-  ];
+// اسم البلد الذي نبي نطلّع ترنده
+const COUNTRY_NAME = "Saudi Arabia";
 
-  // ————— مساعدات —————
-  function normalizeTag(s='') {
-    // نحذف الهاش والمسافات/المدود/التشكيل ونحوّل لأحرف موحدة
-    let t = s.toString().trim();
-    t = t.replace(/^#+/, '');           // شيل #
-    t = t.replace(/\s+/g, '');          // شيل المسافات
-    // إزالة التشكيل العربي
-    t = t.normalize('NFKD').replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g,'');
-    // توحيد الياء/الألف المقصورة والهمزات الشائعة
-    t = t.replace(/ي|ى/g,'ي').replace(/أ|إ|آ/g,'ا').replace(/ۀ|ة/g,'ه');
-    return t.toLowerCase();
+// كلمات محظورة مبدئية (طوّرها لاحقاً)
+const BLOCKED = ["adult","porn","xxx","nude","sex","nsfw","racist","terror","اباحي","خلاعة","قذر","وسخ","لعنة"];
+
+// دالة مساعدة للطلبات
+async function rapidGet(path) {
+  const url = `https://${HOST}${path}`;
+  const res = await fetch(url, {
+    headers: {
+      "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
+      "X-RapidAPI-Host": HOST,
+    },
+  });
+  const text = await res.text();
+  let data; try { data = JSON.parse(text); } catch { data = text; }
+  return { ok: res.ok, status: res.status, data };
+}
+
+// جلب معرّف موقع السعودية من endpoint "Get available locations"
+async function getSaudiLocationId() {
+  // عادة يكون المسار /locations (مذكور في الشريط اليسار عندك)
+  const { ok, status, data } = await rapidGet("/locations");
+  if (!ok) throw new Error(`locations error ${status}: ${JSON.stringify(data)}`);
+
+  // ابحث عن Saudi Arabia (أحياناً name أو country_name)
+  const list = Array.isArray(data) ? data : (data.locations || data.data || []);
+  const match = list.find(
+    (x) =>
+      (x.name && x.name.toLowerCase() === COUNTRY_NAME.toLowerCase()) ||
+      (x.country_name && x.country_name.toLowerCase() === COUNTRY_NAME.toLowerCase())
+  );
+
+  if (!match?.id) {
+    // لو ما وجدناها، جرّب أقرب تطابق
+    const fuzzy = list.find(
+      (x) =>
+        (x.name && x.name.toLowerCase().includes("saudi")) ||
+        (x.country_name && x.country_name.toLowerCase().includes("saudi"))
+    );
+    if (!fuzzy?.id) {
+      throw new Error("Saudi Arabia location id not found in /locations response");
+    }
+    return fuzzy.id;
   }
+  return match.id;
+}
 
-  function isAllowedTag(name='') {
-    const n = normalizeTag(name);
-    return ALLOWLIST.includes(n);
-  }
+function normalizeAndFilterTrends(raw) {
+  const arr =
+    Array.isArray(raw) ? raw :
+    raw?.trends && Array.isArray(raw.trends) ? raw.trends :
+    raw?.data && Array.isArray(raw.data) ? raw.data :
+    [];
 
-  async function fetchFromX() {
-    const url = `https://api.twitter.com/1.1/trends/place.json?id=${KSA_WOEID}`;
-    const r = await fetch(url, { headers: { Authorization: `Bearer ${X_BEARER}` }});
-    if (!r.ok) throw new Error(`X API ${r.status}`);
-    const j = await r.json();
-    const trends = j?.[0]?.trends || [];
-    return trends.map(t => ({ name: t.name, volume: t.tweet_volume, url: t.url }));
-  }
+  return arr
+    .map((it) => {
+      const name = (it.name || it.title || "").trim();
+      return {
+        name,
+        url: it.url || null,
+        tweet_volume: it.tweet_volume ?? it.volume ?? null,
+      };
+    })
+    .filter((it) => it.name)
+    .filter((it) => !BLOCKED.some((bad) => it.name.toLowerCase().includes(bad)));
+}
 
-  async function fetchFromRapid() {
-    const url = `https://${RAPID_HOST}/trends?woeid=${KSA_WOEID}`;
-    const r = await fetch(url, {
-      headers: { 'X-RapidAPI-Key': RAPID_KEY, 'X-RapidAPI-Host': RAPID_HOST }
-    });
-    if (!r.ok) throw new Error(`RapidAPI ${r.status}`);
-    const j = await r.json();
-    const arr = j.trends || j.data || j || [];
-    return arr.map(t => ({
-      name: t.name || t.topic || t.title,
-      volume: t.tweet_volume || t.volume || null,
-      url: t.url || (t.name ? `https://x.com/search?q=${encodeURIComponent(t.name)}` : null)
-    }));
-  }
-
+export const handler = async (event) => {
   try {
-    // 3) اجلب الترند (إن وُجد مفتاح)، وإلا اعرض احتياطي آمن فقط
-    let rows = [];
-    if (X_BEARER)      rows = await fetchFromX();
-    else if (RAPID_KEY)rows = await fetchFromRapid();
+    const debug = event?.queryStringParameters?.debug === "1";
 
-    // 4) خذ فقط الهاشتاقات (#...) والمسموح بها في القائمة البيضاء
-    let safe = [];
-    if (rows.length) {
-      safe = rows
-        .filter(x => x?.name && x.name.trim().startsWith('#'))
-        .filter(x => isAllowedTag(x.name))
-        .slice(0, 10);
+    // 1) جيب Location ID للسعودية
+    const locationId = await getSaudiLocationId();
+
+    // 2) جيب الترندات لهذا الموقع
+    // من صورتك، الـ endpoint المعروض لِـ "Get trending hashtags / topics for location"
+    // شكله: /location/{id}
+    const { ok, status, data } = await rapidGet(`/location/${locationId}`);
+
+    if (debug) {
+      return {
+        statusCode: status,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ status, locationId, raw: data }, null, 2),
+      };
     }
 
-    // 5) إن لم نصل لـ 10 عناصر، نكمل من SAFE_FALLBACK (بدون تكرار)
-    const have = new Set(safe.map(x => x.name.toLowerCase()));
-    for (const tag of SAFE_FALLBACK) {
-      if (safe.length >= 10) break;
-      if (!have.has(tag.toLowerCase())) {
-        safe.push({ name: tag, volume: null, url: `https://x.com/search?q=${encodeURIComponent(tag)}` });
-        have.add(tag.toLowerCase());
-      }
+    if (!ok) {
+      return {
+        statusCode: status,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ error: "Upstream error", status, raw: data }, null, 2),
+      };
     }
+
+    const trends = normalizeAndFilterTrends(data);
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=120' },
-      body: JSON.stringify({ updated_at: new Date().toISOString(), items: safe.slice(0,10) })
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=600",
+      },
+      body: JSON.stringify({
+        updated_at: new Date().toISOString(),
+        country: "SA",
+        location_id: locationId,
+        count: trends.length,
+        trends,
+      }),
     };
   } catch (e) {
-    // فشل الجلب؟ اعرض الاحتياطي الآمن فقط
-    const items = SAFE_FALLBACK.slice(0,10).map(tag => ({
-      name: tag, volume: null, url: `https://x.com/search?q=${encodeURIComponent(tag)}`
-    }));
     return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=300' },
-      body: JSON.stringify({ updated_at: new Date().toISOString(), items, fallback:true, error:e.message })
+      statusCode: 500,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ error: e.message }),
     };
   }
 };
