@@ -1,107 +1,70 @@
 // /netlify/functions/x-trends.mjs
-import fetch from "node-fetch";
+// ملاحظة: Netlify (Node 18+) فيه fetch مدمج، ما نحتاج node-fetch
 
-// مزود RapidAPI الذي اخترته (من صورتك)
 const HOST = "twitter-trends-by-location.p.rapidapi.com";
+// هذا هو المعرّف الظاهر لك في RapidAPI (من لقطة الشاشة)
+const LOCATION_ID = "f719fcd7bc333af4b3d78d0e65893e5e";
 
-// اسم البلد الذي نبي نطلّع ترنده
-const COUNTRY_NAME = "Saudi Arabia";
-
-// كلمات محظورة مبدئية (طوّرها لاحقاً)
+// كلمات محظورة مبدئية
 const BLOCKED = ["adult","porn","xxx","nude","sex","nsfw","racist","terror","اباحي","خلاعة","قذر","وسخ","لعنة"];
 
-// دالة مساعدة للطلبات
-async function rapidGet(path) {
-  const url = `https://${HOST}${path}`;
-  const res = await fetch(url, {
-    headers: {
-      "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
-      "X-RapidAPI-Host": HOST,
-    },
-  });
-  const text = await res.text();
-  let data; try { data = JSON.parse(text); } catch { data = text; }
-  return { ok: res.ok, status: res.status, data };
-}
-
-// جلب معرّف موقع السعودية من endpoint "Get available locations"
-async function getSaudiLocationId() {
-  // عادة يكون المسار /locations (مذكور في الشريط اليسار عندك)
-  const { ok, status, data } = await rapidGet("/locations");
-  if (!ok) throw new Error(`locations error ${status}: ${JSON.stringify(data)}`);
-
-  // ابحث عن Saudi Arabia (أحياناً name أو country_name)
-  const list = Array.isArray(data) ? data : (data.locations || data.data || []);
-  const match = list.find(
-    (x) =>
-      (x.name && x.name.toLowerCase() === COUNTRY_NAME.toLowerCase()) ||
-      (x.country_name && x.country_name.toLowerCase() === COUNTRY_NAME.toLowerCase())
-  );
-
-  if (!match?.id) {
-    // لو ما وجدناها، جرّب أقرب تطابق
-    const fuzzy = list.find(
-      (x) =>
-        (x.name && x.name.toLowerCase().includes("saudi")) ||
-        (x.country_name && x.country_name.toLowerCase().includes("saudi"))
-    );
-    if (!fuzzy?.id) {
-      throw new Error("Saudi Arabia location id not found in /locations response");
-    }
-    return fuzzy.id;
-  }
-  return match.id;
-}
-
-function normalizeAndFilterTrends(raw) {
-  const arr =
-    Array.isArray(raw) ? raw :
-    raw?.trends && Array.isArray(raw.trends) ? raw.trends :
-    raw?.data && Array.isArray(raw.data) ? raw.data :
-    [];
-
-  return arr
+function normalize(list) {
+  return (Array.isArray(list) ? list : [])
     .map((it) => {
-      const name = (it.name || it.title || "").trim();
-      return {
-        name,
-        url: it.url || null,
-        tweet_volume: it.tweet_volume ?? it.volume ?? null,
-      };
+      const name = (it.name || it.title || it.hashtag || it.topic || "").toString().trim();
+      const url = it.url || it.link || null;
+      const vol = it.tweet_volume ?? it.volume ?? it.count ?? null;
+      return { name, url, tweet_volume: vol };
     })
-    .filter((it) => it.name)
-    .filter((it) => !BLOCKED.some((bad) => it.name.toLowerCase().includes(bad)));
+    .filter((it) => it.name && !BLOCKED.some((b) => it.name.toLowerCase().includes(b)));
 }
 
 export const handler = async (event) => {
   try {
-    const debug = event?.queryStringParameters?.debug === "1";
+    if (!process.env.RAPIDAPI_KEY) {
+      return { statusCode: 500, body: JSON.stringify({ error: "Missing RAPIDAPI_KEY env" }) };
+    }
 
-    // 1) جيب Location ID للسعودية
-    const locationId = await getSaudiLocationId();
+    // استدعاء مباشر: /location/{id}
+    const res = await fetch(`https://${HOST}/location/${LOCATION_ID}`, {
+      headers: {
+        "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
+        "X-RapidAPI-Host": HOST,
+      },
+    });
 
-    // 2) جيب الترندات لهذا الموقع
-    // من صورتك، الـ endpoint المعروض لِـ "Get trending hashtags / topics for location"
-    // شكله: /location/{id}
-    const { ok, status, data } = await rapidGet(`/location/${locationId}`);
+    const text = await res.text();
+    let data; try { data = JSON.parse(text); } catch { data = text; }
 
-    if (debug) {
+    // وضع debug: /.netlify/functions/x-trends?debug=1
+    if (event?.queryStringParameters?.debug === "1") {
       return {
-        statusCode: status,
+        statusCode: res.status,
         headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ status, locationId, raw: data }, null, 2),
+        body: JSON.stringify({ status: res.status, raw: data }, null, 2),
       };
     }
 
-    if (!ok) {
+    if (!res.ok) {
       return {
-        statusCode: status,
+        statusCode: res.status,
         headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ error: "Upstream error", status, raw: data }, null, 2),
+        body: JSON.stringify({ error: "Upstream error", status: res.status, raw: data }, null, 2),
       };
     }
 
-    const trends = normalizeAndFilterTrends(data);
+    // حاول التقاط المصفوفة من حقول شائعة
+    const arr =
+      Array.isArray(data) ? data :
+      Array.isArray(data.trends) ? data.trends :
+      Array.isArray(data.data) ? data.data :
+      Array.isArray(data.hashtags) ? data.hashtags :
+      Array.isArray(data.items) ? data.items :
+      Array.isArray(data.records) ? data.records :
+      Array.isArray(data.location?.trends) ? data.location.trends :
+      [];
+
+    const trends = normalize(arr);
 
     return {
       statusCode: 200,
@@ -111,17 +74,12 @@ export const handler = async (event) => {
       },
       body: JSON.stringify({
         updated_at: new Date().toISOString(),
-        country: "SA",
-        location_id: locationId,
+        location_id: LOCATION_ID,
         count: trends.length,
         trends,
       }),
     };
   } catch (e) {
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ error: e.message }),
-    };
+    return { statusCode: 500, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: e.message }) };
   }
 };
