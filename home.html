@@ -217,16 +217,6 @@
   .muted{font-size:12px;opacity:.75}
 </style>
 
-<!-- صندوق الترندات -->
-<section id="x-trends" class="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
-  <div class="flex items-center justify-between mb-3">
-    <h2 class="text-lg font-bold">توب 10 هاشتاقات في السعودية</h2>
-    <button id="refreshTrends" class="text-sm underline">تحديث</button>
-  </div>
-  <ul id="trends-list" class="space-y-2 text-sm"></ul>
-  <p id="trends-foot" class="mt-3 text-xs text-gray-500"></p>
-</section>
-
 <script>
 async function loadTrends() {
   const list = document.getElementById("trends-list");
@@ -235,40 +225,57 @@ async function loadTrends() {
   foot.textContent = "";
 
   try {
-    const r = await fetch("/.netlify/functions/x-trends");
+    const r = await fetch("/.netlify/functions/x-trends?limit=10");
+    if (!r.ok) throw new Error("HTTP " + r.status);
+
     const data = await r.json();
+    // الدالة قد ترجع مصفوفة مباشرة أو كائن فيه trends
+    const arr = Array.isArray(data) ? data : (data.trends || []);
 
     list.innerHTML = "";
-    (data.trends || []).forEach((t) => {
-      const label = t.name.startsWith("#") ? t.name : `#${t.name}`;
+    if (!arr.length) {
+      list.innerHTML = "<li>لا توجد نتائج حالياً.</li>";
+      return;
+    }
+
+    arr.forEach((t, i) => {
+      const tag = (t.name || "").trim();
+      const label = tag.startsWith("#") ? tag : `#${tag}`;
+
       const a = document.createElement("a");
-      a.href = "https://x.com/search?q=" + encodeURIComponent(label);
+      a.href = "https://x.com/search?q=" + encodeURIComponent(label) + "&src=trend_click";
       a.target = "_blank";
       a.rel = "noopener";
       a.className = "hover:underline";
-      a.textContent = label;
+      a.textContent = `${i+1}. ${label.replace(/^#/, "")}`;
+
+      const right = document.createElement("span");
+      right.className = "opacity-70";
+      if (t.tweet_volume) right.textContent = ` — ${Number(t.tweet_volume).toLocaleString("ar-SA")} تغريدة`;
 
       const li = document.createElement("li");
+      li.className = "flex items-center justify-between";
       li.appendChild(a);
+      li.appendChild(right);
       list.appendChild(li);
     });
 
-    if (!data.trends || !data.trends.length) {
-      list.innerHTML = "<li>لا توجد نتائج حالياً.</li>";
-    }
-
-    if (data.updated_at) {
-      const dt = new Date(data.updated_at);
-      foot.textContent = "آخر تحديث: " + dt.toLocaleString("ar-SA");
-    }
+    // ملاحظة: دالتنا لا ترجع updated_at. سنعرض وقت العرض + مصدر الكاش من الهيدر.
+    const xCache = r.headers.get("X-Cache") || "";
+    const when = new Date().toLocaleString("ar-SA");
+    foot.textContent = `آخر تحديث: ${when} ${xCache ? `— المصدر: ${xCache}` : ""}`;
   } catch (e) {
     console.error(e);
     list.innerHTML = "<li>تعذّر جلب الترند الآن.</li>";
   }
 }
+
 document.getElementById("refreshTrends")?.addEventListener("click", loadTrends);
+// تحديث أولي + كل 30 دقيقة (نفس مدة الكاش)
 loadTrends();
+setInterval(loadTrends, 30 * 60 * 1000);
 </script>
+
 
 
 <!-- ====== Salaries Card (no API) ====== -->
