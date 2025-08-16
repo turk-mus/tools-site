@@ -7,3 +7,6 @@
 
 [functions."trigger-build"]
   schedule = "0 5,12,20 * * *" # ثلاث مرات يوميًا (UTC)
+
+[functions."x-trends-refresh"]
+  schedule = "*/30 * * * *" # كل 30 دقيقة (UTC) ≈ 48 مرة يوميًا
