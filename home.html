@@ -228,7 +228,7 @@
     <!-- ✅ صندوق الترندات (مضاف فقط) -->
     <section class="card hashtags-card" id="x-trends" dir="rtl" lang="ar" style="margin-top:22px;">
       <div class="row" style="border-bottom:none; padding:0;">
-        <h3 style="margin:0;color:#006c35"># أعلى 10 ترندات في السعودية</h3>
+        <h3 style="margin:0;color:#006c35"># أعلى 10 ترندات في منصة X</h3>
         <button id="refreshTrends" class="weather-btn" aria-label="تحديث الترندات">تحديث</button>
       </div>
       <ul id="trends-list" class="hashtags-list">
@@ -377,12 +377,14 @@
         iconEl = el('weather-icon'), descEl = el('desc'), windEl = el('wind'), updEl = el('wx-updated'),
         unitBtn = el('unitBtn');
 
-  // افتراضي: الرياض + أعرضه فورًا (يتحدّث لاحقًا عند نجاح تحديد الموقع)
+  // افتراضي: الرياض
   let coords = { lat: 24.7136, lon: 46.6753 };
   cityEl.textContent = 'الرياض، السعودية';
 
   let useF = false;
   let lastTempC = null, lastWind = null, lastDesc = '—', lastIcon = '⛅';
+  let lastLat = null, lastLon = null;  // لمنع إعادة التحميل لنفس النقطة
+  let geoWatchId = null;
 
   const codeMap = {
     0:['صحو','☀️'],1:['صافٍ غالبًا','🌤️'],2:['غائم جزئيًا','⛅'],3:['غائم','☁️'],
@@ -406,80 +408,91 @@
     updEl.textContent = new Date().toLocaleString("ar-EG", { hour12:false });
   }
 
-async function reverseGeocode(lat, lon) {
-  try {
-    const r = await fetch(`/.netlify/functions/revgeo?lat=${lat}&lon=${lon}&lang=ar`, { cache: "no-store" });
-    if (!r.ok) throw new Error("revgeo " + r.status);
-    const j = await r.json();
-    const g = j?.results?.[0];
-    if (!g) return null;
-    const parts = [g.name, g.admin1 || g.country].filter(Boolean);
-    return parts.join("، ");
-  } catch {
-    return null;
+  async function reverseGeocode(lat, lon) {
+    try {
+      // عبر دالة نتلايفي لتجنب CORS
+      const r = await fetch(`/.netlify/functions/revgeo?lat=${lat}&lon=${lon}&lang=ar`, { cache: "no-store" });
+      if (!r.ok) throw new Error("revgeo " + r.status);
+      const j = await r.json();
+      const g = j?.results?.[0];
+      if (!g) return null;
+      const parts = [g.name, g.admin1 || g.country].filter(Boolean);
+      return parts.join("، ");
+    } catch {
+      return null;
+    }
   }
-}
-
-
 
   async function load(lat, lon) {
-    // لو اسم المدينة لسه ما تحدد، أظهر "جاري التحديد…" كتنبيه بصري
-    if (cityEl.textContent === 'الرياض، السعودية') cityEl.textContent = 'جاري تحديد موقعك…';
+    try {
+      if (cityEl.textContent === 'الرياض، السعودية') cityEl.textContent = 'جاري تحديد موقعك…';
 
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
-    const res = await fetch(url, { cache: 'no-store' });
-    const data = await res.json();
-    const cw = data.current_weather;
-    if (!cw) throw new Error('No current weather');
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('open-meteo ' + res.status);
+      const data = await res.json();
+      const cw = data.current_weather;
+      if (!cw) throw new Error('No current weather');
 
-    const [d, ic] = wx(cw.weathercode);
-    lastDesc = d; lastIcon = ic;
-    lastWind = cw.windspeed;
-    lastTempC = cw.temperature;
-    updateDisplay();
+      const [d, ic] = wx(cw.weathercode);
+      lastDesc = d; lastIcon = ic;
+      lastWind = cw.windspeed;
+      lastTempC = cw.temperature;
+      updateDisplay();
 
-    // جرّب العكس الجغرافي، ولو فشل ارجع للاسم الافتراضي
-    const nice = await reverseGeocode(lat, lon);
-    cityEl.textContent = nice || (lat === 24.7136 && lon === 46.6753 ? 'الرياض، السعودية' : `${lat.toFixed(2)}, ${lon.toFixed(2)}`);
+      const nice = await reverseGeocode(lat, lon);
+      cityEl.textContent = nice || (lat === 24.7136 && lon === 46.6753 ? 'الرياض، السعودية' : `${lat.toFixed(2)}, ${lon.toFixed(2)}`);
+    } catch (e) {
+      console.error(e);
+      cityEl.textContent = 'تعذّر جلب البيانات';
+    }
   }
 
   unitBtn.addEventListener('click', () => { useF = !useF; updateDisplay(); });
   document.getElementById('goWeather').addEventListener('click', () => { window.location.href = 'weather.html'; });
 
-  // ❶ حمّل فورًا على الافتراضي (الرياض) كي لا يبقى "—"
-  load(coords.lat, coords.lon).catch(() => { cityEl.textContent = 'تعذّر جلب البيانات'; });
+  // حمّل الافتراضي مباشرة
+  load(coords.lat, coords.lon);
 
-  // ❷ حاول تحديد الموقع مع مهلة، ولو نجح حدّث المدينة/الطقس
-  if (navigator.geolocation) {
-    const options = { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 };
-    let settled = false;
-
-    navigator.geolocation.getCurrentPosition(
+  // ابدأ متابعة الموقع، وخُذ أول نجاح فقط
+  function startGeoWatch() {
+    if (!navigator.geolocation) return;
+    const opts = { enableHighAccuracy:false, timeout:20000, maximumAge:600000 };
+    geoWatchId = navigator.geolocation.watchPosition(
       async pos => {
-        if (settled) return;
-        settled = true;
         const { latitude, longitude } = pos.coords;
+        // تجنب إعادة التحميل لو الإحداثيات نفسها تقريبًا
+        if (lastLat !== null && Math.abs(latitude - lastLat) < 0.005 && Math.abs(longitude - lastLon) < 0.005) return;
+        lastLat = latitude; lastLon = longitude;
         coords = { lat: latitude, lon: longitude };
-        try { await load(latitude, longitude); } catch {}
+        await load(latitude, longitude);
+        // نكتفي بأول تحديث
+        if (geoWatchId != null) {
+          navigator.geolocation.clearWatch(geoWatchId);
+          geoWatchId = null;
+        }
       },
-      async () => {
-        if (settled) return;
-        settled = true;
-        // نبقى على الافتراضي (الرياض) الذي حمّلناه بالفعل
+      err => {
+        console.warn('geolocation error', err);
+        // نبقى على الرياض
       },
-      options
+      opts
     );
+  }
+  startGeoWatch();
 
-    // مهلة احتياطية: لو الـGPS تأخر كثير، لا نغيّر شيء (الرياض معروضة)
-    setTimeout(() => { settled = true; }, options.timeout + 1000);
+  // لو الإذن تغيّر بعد فتح الصفحة (granted لاحقًا)، أعد المحاولة تلقائيًا
+  if (navigator.permissions?.query) {
+    navigator.permissions.query({ name: 'geolocation' }).then(p => {
+      p.onchange = () => { if (p.state === 'granted' && !geoWatchId) startGeoWatch(); };
+    }).catch(()=>{});
   }
 })();
 </script>
 
 
+
     <div class="buttons">
-      <a href="gold.html" class="btn">💰 أسعار الذهب</a>
-      <a href="fuel.html" class="btn">⛽ أسعار الوقود</a>
       <a href="zakat.html" class="btn">🧮 حاسبة الزكاة</a>
       <a href="age.html" class="btn">🎂 حاسبة العمر</a>
       <a href="history.html" class="btn">📅 تحويل بين الهجري والميلادي</a>
