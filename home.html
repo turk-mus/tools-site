@@ -182,21 +182,99 @@
 
     <!-- ✅ صندوق أسعار الذهب والديناميكية -->
     <div class="info-boxes">
-      <div class="info-box">
-        <h3>💰 أسعار الذهب</h3>
-        <ul id="gold-prices">
-          <li>جاري تحميل الأسعار...</li>
-        </ul>
-      </div>
-      <div class="info-box">
-        <h3>⛽ أسعار الوقود</h3>
-        <ul>
-          <li>بنزين 91: 2.18 ريال</li>
-          <li>بنزين 95: 2.33 ريال</li>
-          <li>ديزل: 0.75 ريال</li>
-        </ul>
-      </div>
+  <div class="info-box">
+    <h3>💰 أسعار الذهب</h3>
+    <ul id="gold-prices">
+      <li>جاري تحميل الأسعار...</li>
+    </ul>
+    <div style="text-align:left; margin-top:10px;">
+      <a href="gold.html" class="btn" style="font-size:14px; padding:6px 10px;">مزيد ➝</a>
     </div>
+  </div>
+
+  <div class="info-box">
+    <h3>⛽ أسعار الوقود</h3>
+    <ul>
+      <li>بنزين 91: 2.18 ريال</li>
+      <li>بنزين 95: 2.33 ريال</li>
+      <li>ديزل: 0.75 ريال</li>
+    </ul>
+    <div style="text-align:left; margin-top:10px;">
+      <a href="fuel.html" class="btn" style="font-size:14px; padding:6px 10px;">مزيد ➝</a>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Hashtags Card ====== -->
+<style>
+  .hashtags-card .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+  .dark-mode .hashtags-card .row{border-bottom:1px solid rgba(255,255,255,.06)}
+  .hashtags-list{list-style:none;margin:0;padding:0}
+  .hashtags-list li{padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+  .dark-mode .hashtags-list li{border-bottom:1px solid rgba(255,255,255,.06)}
+  .hash-link{color:#006c35;text-decoration:none;font-weight:700}
+  .dark-mode .hash-link{color:#6ef19d}
+  .muted{font-size:12px;opacity:.75}
+</style>
+
+<div class="card hashtags-card" dir="rtl" lang="ar" id="hashtags-card">
+  <div class="weather-header" style="margin-bottom:8px">
+    <div>
+      <div class="weather-title">🔥 توب 10 هاشتاقات في السعودية</div>
+      <div class="weather-meta">تحدّث تلقائيًا كل 5 دقائق</div>
+    </div>
+    <div class="salary-actions">
+      <button class="salary-btn" id="goHashtags">مزيد</button>
+    </div>
+  </div>
+
+  <ul class="hashtags-list" id="hashtags-list">
+    <li class="muted">جاري جلب الهاشتاقات...</li>
+  </ul>
+
+  <div class="weather-meta">آخر تحديث: <span id="hashtags-updated">—</span></div>
+</div>
+
+<script>
+(() => {
+  const listEl = document.getElementById('hashtags-list');
+  const updEl  = document.getElementById('hashtags-updated');
+
+  function render(items){
+    if (!items?.length){
+      listEl.innerHTML = '<li class="muted">لا توجد بيانات حالياً</li>';
+      return;
+    }
+    listEl.innerHTML = items.map((it, i) => {
+      const num = (i+1).toString().padStart(2,'0');
+      const href = it.url || `https://x.com/search?q=${encodeURIComponent(it.name)}`;
+      const vol  = (it.volume && Number(it.volume)) ? ` — <span class="muted">${it.volume.toLocaleString()} تغريدة تقريبًا</span>` : '';
+      return `<li><a class="hash-link" href="${href}" target="_blank" rel="noopener">#${it.name.replace(/^#+/,'')}</a>${vol}</li>`;
+    }).join('');
+  }
+
+  async function load(){
+    try{
+      const r = await fetch('/.netlify/functions/ksa-trends', { cache: 'no-store' });
+      if (!r.ok) throw new Error('fetch error ' + r.status);
+      const j = await r.json();
+      render(j.items);
+      updEl.textContent = new Date().toLocaleString('ar-EG', {hour12:false});
+    }catch(e){
+      listEl.innerHTML = '<li class="muted">تعذّر جلب البيانات</li>';
+    }
+  }
+
+  // زر المزيد -> صفحة خاصة بالترند (اعمل صفحة trends.html لاحقًا)
+  document.getElementById('goHashtags').addEventListener('click', () => {
+    window.location.href = 'trends.html';
+  });
+
+  load();
+  setInterval(load, 5 * 60 * 1000); // كل 5 دقائق
+})();
+</script>
+
 
 <!-- ====== Salaries Card (no API) ====== -->
 <style>
