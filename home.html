@@ -555,7 +555,7 @@ async function loadTrends() {
   foot.textContent = "";
 
   try {
-const r = await fetch("/.netlify/functions/x-trends-cache?limit=10", { cache: "no-store" });
+const r = await fetch("/.netlify/functions/x-trends-cached", { cache: "no-store" });
     if (!r.ok) throw new Error("HTTP " + r.status);
     const arr = await r.json();            // << المزوّد يرجّع مصفوفة مباشرة
 
