@@ -217,62 +217,57 @@
   .muted{font-size:12px;opacity:.75}
 </style>
 
-<div class="card hashtags-card" dir="rtl" lang="ar" id="hashtags-card">
-  <div class="weather-header" style="margin-bottom:8px">
-    <div>
-      <div class="weather-title">🔥 توب 10 هاشتاقات في السعودية</div>
-      <div class="weather-meta">تحدّث تلقائيًا كل 5 دقائق</div>
-    </div>
-    <div class="salary-actions">
-      <button class="salary-btn" id="goHashtags">مزيد</button>
-    </div>
+<!-- صندوق الترندات -->
+<section id="x-trends" class="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-lg font-bold">توب 10 هاشتاقات في السعودية</h2>
+    <button id="refreshTrends" class="text-sm underline">تحديث</button>
   </div>
-
-  <ul class="hashtags-list" id="hashtags-list">
-    <li class="muted">جاري جلب الهاشتاقات...</li>
-  </ul>
-
-  <div class="weather-meta">آخر تحديث: <span id="hashtags-updated">—</span></div>
-</div>
+  <ul id="trends-list" class="space-y-2 text-sm"></ul>
+  <p id="trends-foot" class="mt-3 text-xs text-gray-500"></p>
+</section>
 
 <script>
-(() => {
-  const listEl = document.getElementById('hashtags-list');
-  const updEl  = document.getElementById('hashtags-updated');
+async function loadTrends() {
+  const list = document.getElementById("trends-list");
+  const foot = document.getElementById("trends-foot");
+  list.innerHTML = "<li>جاري التحميل...</li>";
+  foot.textContent = "";
 
-  function render(items){
-    if (!items?.length){
-      listEl.innerHTML = '<li class="muted">لا توجد بيانات حالياً</li>';
-      return;
+  try {
+    const r = await fetch("/.netlify/functions/x-trends");
+    const data = await r.json();
+
+    list.innerHTML = "";
+    (data.trends || []).forEach((t) => {
+      const label = t.name.startsWith("#") ? t.name : `#${t.name}`;
+      const a = document.createElement("a");
+      a.href = "https://x.com/search?q=" + encodeURIComponent(label);
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.className = "hover:underline";
+      a.textContent = label;
+
+      const li = document.createElement("li");
+      li.appendChild(a);
+      list.appendChild(li);
+    });
+
+    if (!data.trends || !data.trends.length) {
+      list.innerHTML = "<li>لا توجد نتائج حالياً.</li>";
     }
-    listEl.innerHTML = items.map((it, i) => {
-      const num = (i+1).toString().padStart(2,'0');
-      const href = it.url || `https://x.com/search?q=${encodeURIComponent(it.name)}`;
-      const vol  = (it.volume && Number(it.volume)) ? ` — <span class="muted">${it.volume.toLocaleString()} تغريدة تقريبًا</span>` : '';
-      return `<li><a class="hash-link" href="${href}" target="_blank" rel="noopener">#${it.name.replace(/^#+/,'')}</a>${vol}</li>`;
-    }).join('');
-  }
 
-  async function load(){
-    try{
-      const r = await fetch('/.netlify/functions/ksa-trends', { cache: 'no-store' });
-      if (!r.ok) throw new Error('fetch error ' + r.status);
-      const j = await r.json();
-      render(j.items);
-      updEl.textContent = new Date().toLocaleString('ar-EG', {hour12:false});
-    }catch(e){
-      listEl.innerHTML = '<li class="muted">تعذّر جلب البيانات</li>';
+    if (data.updated_at) {
+      const dt = new Date(data.updated_at);
+      foot.textContent = "آخر تحديث: " + dt.toLocaleString("ar-SA");
     }
+  } catch (e) {
+    console.error(e);
+    list.innerHTML = "<li>تعذّر جلب الترند الآن.</li>";
   }
-
-  // زر المزيد -> صفحة خاصة بالترند (اعمل صفحة trends.html لاحقًا)
-  document.getElementById('goHashtags').addEventListener('click', () => {
-    window.location.href = 'trends.html';
-  });
-
-  load();
-  setInterval(load, 5 * 60 * 1000); // كل 5 دقائق
-})();
+}
+document.getElementById("refreshTrends")?.addEventListener("click", loadTrends);
+loadTrends();
 </script>
 
 
