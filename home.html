@@ -234,11 +234,11 @@
   <ul id="crypto-list"><li>—</li></ul>
   <div class="weather-meta">آخر تحديث: <span id="crypto-updated">—</span></div>
 </div>
-<!-- نتائج المباريات (فِرق + نتيجة + تاريخ) -->
-<section class="card" id="matches-card" dir="rtl" lang="ar" style="margin-top:22px;">
-  <div class="weather-header">
+<!-- نتائج المباريات (مربع صغير + المزيد) -->
+<section class="card" id="matches-mini" dir="rtl" lang="ar" style="margin-top:22px;">
+  <div class="weather-header" style="gap:8px;align-items:center">
     <div class="weather-title">نتائج المباريات</div>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div style="display:flex;gap:8px;margin-inline-start:auto">
       <select id="matchesLeague" class="weather-btn" style="background:#fff;color:#006c35;border:1px solid #006c35">
         <option value="">ملخصات عالمية</option>
         <option value="saudi" selected>الدوري السعودي</option>
@@ -249,213 +249,203 @@
         <option value="ligue 1">الدوري الفرنسي</option>
         <option value="champions">دوري الأبطال</option>
       </select>
-      <button id="refreshMatches" class="weather-btn">تحديث</button>
+      <button id="matchesRefresh" class="weather-btn">تحديث</button>
+      <button id="matchesMore" class="weather-btn">المزيد</button>
     </div>
   </div>
 
   <style>
-    /* تنسيقات صفوف النتائج */
-    #matches-list{list-style:none;margin:0;padding:0}
-    .match-row{padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06)}
-    .dark-mode .match-row{border-color:rgba(255,255,255,.08)}
-    .teams{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700}
-    .teams .team{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .teams .score{min-width:72px;text-align:center;font-variant-numeric:tabular-nums}
-    .meta{margin-top:4px;font-size:12px;opacity:.8}
+    /* مربّع صغير لمباراتين */
+    #matches-mini-list{list-style:none;margin:0;padding:0}
+    .mini-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+    .mini-row:last-child{border-bottom:none}
+    .dark-mode .mini-row{border-color:rgba(255,255,255,.08)}
+    .team{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+    .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+    .score{min-width:64px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700}
+    .meta{font-size:12px;opacity:.8;margin-top:2px}
+    .club{display:flex;flex-direction:column;gap:2px;min-width:0}
+    .logo-wrap{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;background:#f3f3f3;overflow:hidden}
+    .dark-mode .logo-wrap{background:#2a2a2a}
+    .logo{width:100%;height:100%;object-fit:cover}
+    .logo-fallback{font-size:16px;line-height:1}
   </style>
 
-  <ul id="matches-list"><li>جاري التحميل…</li></ul>
-  <div class="weather-meta">آخر تحديث: <span id="matches-updated">—</span></div>
+  <ul id="matches-mini-list">
+    <li class="mini-row"><div class="name">جاري التحميل…</div></li>
+  </ul>
+  <div class="weather-meta">آخر تحديث: <span id="matches-mini-updated">—</span></div>
 </section>
 
 <script>
 (() => {
-  const list = document.getElementById('matches-list');
-  const updated = document.getElementById('matches-updated');
-  const sel = document.getElementById('matchesLeague');
+  const listEl   = document.getElementById('matches-mini-list');
+  const updEl    = document.getElementById('matches-mini-updated');
+  const sel      = document.getElementById('matchesLeague');
+  const btnMore  = document.getElementById('matchesMore');
+  const btnRef   = document.getElementById('matchesRefresh');
 
-  /* خريطة تعريب لأسماء الدوريات والأندية الشائعة */
+  let expanded = false; // false => مباراتين، true => الكل (حتى 12)
+
+  // تحويل قيمة القائمة إلى نص يبحث به المزوّد
+  const Q_MAP = {
+    '': '',
+    'saudi':'Saudi Pro League',
+    'premier':'Premier League',
+    'la liga':'La Liga',
+    'serie a':'Serie A',
+    'bundesliga':'Bundesliga',
+    'ligue 1':'Ligue 1',
+    'champions':'UEFA Champions League',
+  };
+
+  // تعريب بسيط للأسماء الشائعة
   const AR_MAP = {
-    // بطولات
-    'Saudi Pro League': 'الدوري السعودي',
-    'Premier League': 'الدوري الإنجليزي',
-    'LaLiga': 'الدوري الإسباني',
-    'La Liga': 'الدوري الإسباني',
-    'Serie A': 'الدوري الإيطالي',
-    'Bundesliga': 'الدوري الألماني',
-    'Ligue 1': 'الدوري الفرنسي',
-    'UEFA Champions League': 'دوري أبطال أوروبا',
-    'AFC Champions League': 'دوري أبطال آسيا',
-    // أندية سعودية
-    'Al Hilal': 'الهلال','Al Nassr':'النصر','Al Ittihad':'الاتحاد','Al Ahli':'الأهلي','Al Shabab':'الشباب',
+    'Saudi Pro League':'الدوري السعودي',
+    'Premier League':'الدوري الإنجليزي',
+    'LaLiga':'الدوري الإسباني',
+    'La Liga':'الدوري الإسباني',
+    'Serie A':'الدوري الإيطالي',
+    'Bundesliga':'الدوري الألماني',
+    'Ligue 1':'الدوري الفرنسي',
+    'UEFA Champions League':'دوري أبطال أوروبا',
+    'AFC Champions League':'دوري أبطال آسيا',
+    'Al Hilal':'الهلال','Al Nassr':'النصر','Al Ittihad':'الاتحاد','Al Ahli':'الأهلي','Al Shabab':'الشباب',
     'Al Raed':'الرائد','Al Taawoun':'التعاون','Al Ettifaq':'الاتفاق','Al Fateh':'الفتح','Abha':'أبها',
     'Damac':'ضمك','Al Fayha':'الفيحاء','Al Riyadh':'الرياض','Al Okhdood':'الأخدود','Al Khaleej':'الخليج',
     'Al Hazem':'الحزم','Al Tai':'الطائي',
-    // أمثلة عالمية
     'Manchester City':'مانشستر سيتي','Manchester United':'مانشستر يونايتد','Liverpool':'ليفربول','Arsenal':'أرسنال','Chelsea':'تشيلسي',
-    'Barcelona':'برشلونة','Real Madrid':'ريال مدريد','Atletico Madrid':'أتلتيكو مدريد','Inter':'إنتر','AC Milan':'ميلان',
-    'Juventus':'يوفنتوس','Bayern Munich':'بايرن ميونخ','Paris Saint-Germain':'باريس سان جيرمان'
+    'Barcelona':'برشلونة','Real Madrid':'ريال مدريد','Atletico Madrid':'أتلتيكو مدريد','Inter':'إنتر','AC Milan':'ميلان','Juventus':'يوفنتوس',
+    'Bayern Munich':'بايرن ميونخ','Paris Saint-Germain':'باريس سان جيرمان'
   };
-
-  /* تحويل قيمة القائمة لقيمة يبحث فيها المزود */
-  const Q_MAP = {
-    '': '',
-    'saudi': 'Saudi Pro League',
-    'premier': 'Premier League',
-    'la liga': 'La Liga',
-    'serie a': 'Serie A',
-    'bundesliga': 'Bundesliga',
-    'ligue 1': 'Ligue 1',
-    'champions': 'UEFA Champions League',
-  };
-
-  /* تعريب نص وفق القاموس */
-  function arName(s){
+  function ar(s){
     if(!s) return s;
     let out = s;
-    for(const [en, ar] of Object.entries(AR_MAP)){
-      const re = new RegExp('\\b' + en.replace(/[-\\/\\^$*+?.()|[\\]{}]/g,'\\$&') + '\\b','gi');
+    for(const [en,ar] of Object.entries(AR_MAP)){
+      const re = new RegExp('\\b'+en.replace(/[-\\/\\^$*+?.()|[\\]{}]/g,'\\$&')+'\\b','gi');
       out = out.replace(re, ar);
     }
     return out;
   }
 
-  /* محاولة استخراج التاريخ من عدة حقول محتملة */
+  // التقاط التاريخ من عدة حقول محتملة
   function pickDate(m){
     const cand = m?.date || m?.utcDate || m?.datetime || m?.kickoff || m?.time || m?.ts || m?.timestamp || m?.startTime || m?.match_time || m?.fixture?.date;
     if (!cand) return null;
-
     if (typeof cand === 'number'){
-      // ثواني أم ملّي ثانية؟
-      const ms = cand < 1e12 ? cand * 1000 : cand;
+      const ms = cand < 1e12 ? cand*1000 : cand;
       const d = new Date(ms);
-      return isNaN(d) ? null : d;
+      return isNaN(d)?null:d;
     }
     if (typeof cand === 'string'){
-      // إذا كان رقم كسلسلة
       if (/^\d+$/.test(cand)){
         const n = Number(cand);
-        const ms = n < 1e12 ? n * 1000 : n;
+        const ms = n < 1e12 ? n*1000 : n;
         const d = new Date(ms);
-        return isNaN(d) ? null : d;
+        return isNaN(d)?null:d;
       }
       const d = new Date(cand);
-      return isNaN(d) ? null : d;
+      return isNaN(d)?null:d;
     }
     return null;
   }
 
-  /* استخراج أسماء الفرق والنتيجة */
+  // استخراج أسماء الفرق والنتيجة
   function extractTeamsScore(m){
-    // أسماء
-    const home = arName(m.home || m.homeTeam || m.team1 || m.teams?.home || m.h || m.ht || m?.fixture?.teams?.home?.name || '');
-    const away = arName(m.away || m.awayTeam || m.team2 || m.teams?.away || m.a || m.at || m?.fixture?.teams?.away?.name || '');
-
-    // نتيجة
+    const home = ar(m.home || m.homeTeam || m.team1 || m.teams?.home || m.h || m.ht || m?.fixture?.teams?.home?.name || '');
+    const away = ar(m.away || m.awayTeam || m.team2 || m.teams?.away || m.a || m.at || m?.fixture?.teams?.away?.name || '');
     let homeG, awayG;
-
     if (typeof m.score === 'string'){
-      // "2-1" مثلا
       const mm = m.score.match(/(-?\d+)\s*[-:–]\s*(-?\d+)/);
       if (mm){ homeG = mm[1]; awayG = mm[2]; }
     }
-    if (homeG == null && Array.isArray(m.ft)){ homeG = m.ft[0]; awayG = m.ft[1]; }
-    if (homeG == null && m.goals && Number.isFinite(m.goals.home) && Number.isFinite(m.goals.away)) {
-      homeG = m.goals.home; awayG = m.goals.away;
-    }
-    if (homeG == null && Number.isFinite(m.homeScore) && Number.isFinite(m.awayScore)) {
-      homeG = m.homeScore; awayG = m.awayScore;
-    }
-    if (homeG == null && m.result && Number.isFinite(m.result?.home) && Number.isFinite(m.result?.away)){
-      homeG = m.result.home; awayG = m.result.away;
-    }
-    if (homeG == null && m?.fixture?.goals && Number.isFinite(m.fixture.goals.home) && Number.isFinite(m.fixture.goals.away)){
-      homeG = m.fixture.goals.home; awayG = m.fixture.goals.away;
-    }
-
+    if (homeG==null && Array.isArray(m.ft)){ homeG = m.ft[0]; awayG = m.ft[1]; }
+    if (homeG==null && m.goals && Number.isFinite(m.goals.home) && Number.isFinite(m.goals.away)) { homeG=m.goals.home; awayG=m.goals.away; }
+    if (homeG==null && Number.isFinite(m.homeScore) && Number.isFinite(m.awayScore)) { homeG=m.homeScore; awayG=m.awayScore; }
+    if (homeG==null && m.result && Number.isFinite(m.result?.home) && Number.isFinite(m.result?.away)) { homeG=m.result.home; awayG=m.result.away; }
+    if (homeG==null && m?.fixture?.goals && Number.isFinite(m.fixture.goals.home) && Number.isFinite(m.fixture.goals.away)) { homeG=m.fixture.goals.home; awayG=m.fixture.goals.away; }
     return { home, away, homeG, awayG };
   }
 
-  /* تعريب حالة المباراة */
+  // محاولة جلب شعار الفريق
+  function getLogo(m, side /* 'home' | 'away' */){
+    const paths = side === 'home'
+      ? [m.homeLogo, m.home_logo, m?.logos?.home, m?.teams?.homeLogo, m?.teams?.home?.logo, m?.fixture?.teams?.home?.logo, m.homeCrest, m?.home_team_logo]
+      : [m.awayLogo, m.away_logo, m?.logos?.away, m?.teams?.awayLogo, m?.teams?.away?.logo, m?.fixture?.teams?.away?.logo, m.awayCrest, m?.away_team_logo];
+    for (const p of paths){
+      if (typeof p === 'string' && /^https?:\/\//i.test(p)) return p;
+    }
+    return null;
+  }
+
   function statusAr(s){
     const x = String(s||'').toUpperCase();
     if (['FT','FINISHED','ENDED'].includes(x)) return 'نهائي';
     if (['LIVE','IN_PLAY'].includes(x)) return 'جارية';
     if (['HT'].includes(x)) return 'استراحة';
     if (['NS','SCHEDULED','UPCOMING'].includes(x)) return 'قادمة';
-    if (!s) return '';
-    return s; // كما هي
+    return '';
   }
 
-  /* بناء صف HTML واحد */
-  function rowFromItem(m){
-    // بعض المصادر ترجع نص فقط
-    if (typeof m === 'string'){
-      return `
-        <li class="match-row">
-          <div class="teams"><span class="team">${arName(m)}</span></div>
-        </li>`;
-    }
-
+  function rowHTML(m){
     const { home, away, homeG, awayG } = extractTeamsScore(m);
-    const comp = arName(m.comp || m.league || m.competition || m.tournament || m?.fixture?.league?.name || '');
+    const comp = ar(m.comp || m.league || m.competition || m.tournament || m?.fixture?.league?.name || '');
     const st = statusAr(m.status || m.state || m.match_status || m?.fixture?.status?.short);
     const d = pickDate(m);
     const dateStr = d ? d.toLocaleString('ar-SA', { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false }) : '';
+    const scoreTxt = (homeG!=null && awayG!=null) ? `${homeG} - ${awayG}` : '—';
 
-    // لو ما فيه فرق واضحة، استخدم عنوان عام إن وجد
-    if (!home && !away){
-      const title = arName(m.title || m.name || 'مباراة');
-      return `
-        <li class="match-row">
-          <div class="teams"><span class="team">${title}</span></div>
-          <div class="meta">${[dateStr, comp, st].filter(Boolean).join(' • ')}</div>
-        </li>`;
-    }
+    const hLogo = getLogo(m,'home');
+    const aLogo = getLogo(m,'away');
 
-    const scoreTxt = (homeG != null && awayG != null) ? `${homeG} - ${awayG}` : '—';
     return `
-      <li class="match-row">
-        <div class="teams">
-          <span class="team">${home || '—'}</span>
-          <span class="score">${scoreTxt}</span>
-          <span class="team">${away || '—'}</span>
+      <li class="mini-row">
+        <div class="team">
+          <span class="logo-wrap">${hLogo ? `<img class="logo" loading="lazy" referrerpolicy="no-referrer" src="${hLogo}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'logo-fallback',textContent:'⚽️'}))">` : `<span class="logo-fallback">⚽️</span>`}</span>
+          <span class="club"><span class="name">${home || '—'}</span></span>
         </div>
-        <div class="meta">${[dateStr, comp, st].filter(Boolean).join(' • ')}</div>
-      </li>`;
+        <div class="score">${scoreTxt}</div>
+        <div class="team" style="justify-content:flex-end">
+          <span class="club" style="align-items:flex-end"><span class="name">${away || '—'}</span></span>
+          <span class="logo-wrap">${aLogo ? `<img class="logo" loading="lazy" referrerpolicy="no-referrer" src="${aLogo}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'logo-fallback',textContent:'⚽️'}))">` : `<span class="logo-fallback">⚽️</span>`}</span>
+        </div>
+      </li>
+      <li class="mini-row" style="padding-top:0;border-bottom:none">
+        <div class="meta" style="width:100%">${[dateStr, comp, st].filter(Boolean).join(' • ')}</div>
+      </li>
+    `;
   }
 
-  async function loadMatches() {
-    list.innerHTML = '<li>جاري التحميل…</li>';
-
+  async function load(limit){
     const raw = (sel?.value || '').trim();
-    const query = Q_MAP[raw] ?? raw;   // يحوّل saudi -> Saudi Pro League
-    try {
-      const r = await fetch(
-        '/.netlify/functions/matches?q=' + encodeURIComponent(query) + '&limit=12&fallback=1',
-        { cache:'no-store' }
-      );
+    const q = Q_MAP[raw] ?? raw;
+    listEl.innerHTML = `<li class="mini-row"><div class="name">جاري التحميل…</div></li>`;
+    try{
+      const r = await fetch('/.netlify/functions/matches?q=' + encodeURIComponent(q) + '&limit=' + (limit ?? (expanded?12:2)) + '&fallback=1', { cache:'no-store' });
       const arr = r.ok ? await r.json() : [];
-
-      list.innerHTML = '';
       if (!Array.isArray(arr) || arr.length === 0){
-        list.innerHTML = '<li class="match-row"><div class="teams"><span class="team">لا توجد نتائج حالياً.</span></div></li>';
+        listEl.innerHTML = `<li class="mini-row"><div class="name">لا توجد نتائج حالياً.</div></li>`;
       } else {
-        list.innerHTML = arr.map(rowFromItem).join('');
+        const take = (limit ?? (expanded?12:2));
+        listEl.innerHTML = arr.slice(0, take).map(rowHTML).join('');
       }
-      updated.textContent = new Date().toLocaleString('ar-EG', { hour12:false });
-    } catch (e) {
-      list.innerHTML = '<li class="match-row"><div class="teams"><span class="team">تعذّر الجلب الآن.</span></div></li>';
-      updated.textContent = '';
+      updEl.textContent = new Date().toLocaleString('ar-EG', { hour12:false });
+    }catch(e){
+      listEl.innerHTML = `<li class="mini-row"><div class="name">تعذّر الجلب الآن.</div></li>`;
+      updEl.textContent = '';
       console.warn(e);
     }
+    btnMore.textContent = expanded ? 'إخفاء' : 'المزيد';
   }
 
-  document.getElementById('refreshMatches')?.addEventListener('click', loadMatches);
-  sel?.addEventListener('change', loadMatches);
+  // تفعيل الأزرار
+  btnRef?.addEventListener('click', () => load());
+  btnMore?.addEventListener('click', () => { expanded = !expanded; load(); });
+  sel?.addEventListener('change', () => { expanded = false; load(2); });
 
-  loadMatches();
-  setInterval(loadMatches, 15 * 60 * 1000);
+  // تحميل أولي + تحديث دوري
+  load(2);
+  setInterval(() => load(expanded ? 12 : 2), 15 * 60 * 1000);
 })();
 </script>
 
