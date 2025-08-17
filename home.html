@@ -225,29 +225,26 @@
       </div>
     </div>
 
-<!-- كرت الكريبتو -->
-<div class="card" dir="rtl" lang="ar" id="crypto-card">
+<!-- العملات الرقمية -->
+<div class="card">
   <div class="weather-header">
-    <div>
-      <div class="weather-title">العملات الرقمية</div>
-      <div class="weather-meta" id="crypto-upd">—</div>
-    </div>
-    <button class="weather-btn" id="refreshCrypto">تحديث</button>
+    <div class="weather-title">العملات الرقمية</div>
+    <button id="cryptoRefresh" class="weather-btn">تحديث</button>
   </div>
-  <ul id="crypto-list" style="list-style:none;margin:0;padding:0"></ul>
+  <ul id="crypto-list"><li>—</li></ul>
+  <div class="weather-meta">آخر تحديث: <span id="crypto-updated">—</span></div>
 </div>
 
-<!-- كرت الأسهم السعودية -->
-<div class="card" dir="rtl" lang="ar" id="stocks-card">
+<!-- الأسهم السعودية -->
+<div class="card">
   <div class="weather-header">
-    <div>
-      <div class="weather-title">الأسهم السعودية</div>
-      <div class="weather-meta" id="stocks-upd">—</div>
-    </div>
-    <button class="weather-btn" id="refreshStocks">تحديث</button>
+    <div class="weather-title">الأسهم السعودية</div>
+    <button id="stocksRefresh" class="weather-btn">تحديث</button>
   </div>
-  <ul id="stocks-list" style="list-style:none;margin:0;padding:0"></ul>
+  <ul id="stocks-list"><li>—</li></ul>
+  <div class="weather-meta">آخر تحديث: <span id="stocks-updated">—</span></div>
 </div>
+
 
 
     <!-- ✅ صندوق الترندات (مضاف فقط) -->
@@ -635,71 +632,89 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 <script>
-(function(){
-  const fmt = n => n.toLocaleString("ar-SA");
-  const sign = x => (x>0? "+" : "") + x.toFixed(2) + "%";
+(() => {
+  const list   = document.getElementById('crypto-list');
+  const upd    = document.getElementById('crypto-updated');
+  const btn    = document.getElementById('cryptoRefresh');
 
-  async function loadCrypto(){
-    const list = document.getElementById("crypto-list");
-    const upd  = document.getElementById("crypto-upd");
-    list.innerHTML = "<li>جاري التحميل…</li>";
+  const COIN_IDS = 'bitcoin,ethereum,tether,solana,binance-coin,xrp';
+  const nf = new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  async function loadCrypto() {
+    if (!list) return;
+    list.innerHTML = '<li>جاري التحميل…</li>';
     try {
-      const r = await fetch("/.netlify/functions/crypto?ids=bitcoin,ethereum,tether,solana,binance-coin,xrp", { cache: "no-store" });
-      const j = await r.json();
-      list.innerHTML = "";
-      (j.data || []).forEach(c => {
-        const li = document.createElement("li");
-        li.style.display="flex"; li.style.justifyContent="space-between"; li.style.padding="6px 0"; li.style.borderBottom="1px solid rgba(0,0,0,.06)";
-        const left = document.createElement("span");
-        left.textContent = `${c.name} (${c.symbol})`;
-        const right = document.createElement("span");
-        right.textContent = `${fmt(c.price_sar)} ر.س • ${sign(c.change_24h)}`;
-        right.style.color = c.change_24h>=0 ? "#0a7a3d" : "#c62828";
-        li.appendChild(left); li.appendChild(right);
+      const r = await fetch('/.netlify/functions/crypto?ids=' + encodeURIComponent(COIN_IDS), { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const arr = await r.json();
+
+      list.innerHTML = '';
+      arr.forEach(c => {
+        const price = c.priceUSD ?? c.price ?? c.current_price;
+        const ch    = c.change24h ?? c.changePercent24h ?? c.price_change_percentage_24h;
+        const li = document.createElement('li');
+        const chStr = (ch == null) ? '' : ((ch >= 0 ? '▲ ' : '▼ ') + nf.format(ch) + '%');
+        li.innerHTML = `<strong>${c.name || c.id}</strong>: ${nf.format(price)} $ <span style="opacity:.8">${chStr}</span>`;
+        li.style.color = (ch ?? 0) >= 0 ? '#0a8f55' : '#c0392b';
         list.appendChild(li);
       });
-      upd.textContent = "آخر تحديث: " + new Date().toLocaleString("ar-SA");
-    } catch(e){
-      list.innerHTML = "<li>تعذّر جلب بيانات العملات.</li>";
+
+      if (upd) upd.textContent = new Date().toLocaleString('ar-EG', { hour12: false });
+    } catch (e) {
+      list.innerHTML = '<li>تعذّر الجلب الآن.</li>';
+      if (upd) upd.textContent = '';
     }
   }
 
-  async function loadStocks(){
-    const list = document.getElementById("stocks-list");
-    const upd  = document.getElementById("stocks-upd");
-    list.innerHTML = "<li>جاري التحميل…</li>";
-    try {
-      const syms = "2222.SR,2010.SR,7010.SR,1120.SR,1180.SR,2280.SR,^TASI";
-      const r = await fetch("/.netlify/functions/stocks-sa?symbols=" + encodeURIComponent(syms), { cache: "no-store" });
-      const j = await r.json();
-      list.innerHTML = "";
-      (j.data || []).forEach(s => {
-        const li = document.createElement("li");
-        li.style.display="flex"; li.style.justifyContent="space-between"; li.style.padding="6px 0"; li.style.borderBottom="1px solid rgba(0,0,0,.06)";
-        const left = document.createElement("span");
-        left.textContent = s.name + " (" + s.symbol + ")";
-        const right = document.createElement("span");
-        const pct = typeof s.change_percent === "number" ? s.change_percent : 0;
-        right.textContent = `${fmt(s.price)} ${s.currency || "SAR"} • ${sign(pct)}`;
-        right.style.color = pct>=0 ? "#0a7a3d" : "#c62828";
-        li.appendChild(left); li.appendChild(right);
-        list.appendChild(li);
-      });
-      upd.textContent = "آخر تحديث: " + new Date().toLocaleString("ar-SA");
-    } catch(e){
-      list.innerHTML = "<li>تعذّر جلب بيانات الأسهم.</li>";
-    }
-  }
-
-  document.getElementById("refreshCrypto")?.addEventListener("click", loadCrypto);
-  document.getElementById("refreshStocks")?.addEventListener("click", loadStocks);
-
-  // أول تحميل + تحديث تلقائي
-  loadCrypto(); loadStocks();
-  setInterval(loadCrypto, 10 * 60 * 1000); // كل 10 دقائق
-  setInterval(loadStocks, 5 * 60 * 1000);  // كل 5 دقائق
+  btn?.addEventListener('click', loadCrypto);
+  loadCrypto();
+  // تحديث تلقائي كل 15 دقيقة (الـCDN يغطي الحد)
+  setInterval(loadCrypto, 15 * 60 * 1000);
 })();
 </script>
+
+<script>
+(() => {
+  const list   = document.getElementById('stocks-list');
+  const upd    = document.getElementById('stocks-updated');
+  const btn    = document.getElementById('stocksRefresh');
+
+  // رموز أمثلة: أرامكو، سابك، إس تي سي، الراجحي، الأهلي، المراعي، والمؤشر العام
+  const SA_SYMBOLS = '2222.SR,2010.SR,7010.SR,1120.SR,1180.SR,2280.SR,^TASI';
+  const nf = new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  async function loadStocks() {
+    if (!list) return;
+    list.innerHTML = '<li>جاري التحميل…</li>';
+    try {
+      const r = await fetch('/.netlify/functions/stocks-sa?symbols=' + encodeURIComponent(SA_SYMBOLS), { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const arr = await r.json();
+
+      list.innerHTML = '';
+      arr.forEach(s => {
+        const ch = s.changePercent ?? s.change_percent;
+        const li = document.createElement('li');
+        const chStr = (ch == null) ? '' : ((ch >= 0 ? '▲ ' : '▼ ') + nf.format(ch) + '%');
+        li.innerHTML = `<strong>${s.name || s.symbol}</strong>: ${nf.format(s.price)} <span style="opacity:.8">${chStr}</span>`;
+        li.style.color = (ch ?? 0) >= 0 ? '#0a8f55' : '#c0392b';
+        list.appendChild(li);
+      });
+
+      if (upd) upd.textContent = new Date().toLocaleString('ar-EG', { hour12: false });
+    } catch (e) {
+      list.innerHTML = '<li>تعذّر الجلب الآن.</li>';
+      if (upd) upd.textContent = '';
+    }
+  }
+
+  btn?.addEventListener('click', loadStocks);
+  loadStocks();
+  // تحديث تلقائي كل 15 دقيقة
+  setInterval(loadStocks, 15 * 60 * 1000);
+})();
+</script>
+
 
 
 </body>
