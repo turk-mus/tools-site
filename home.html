@@ -225,6 +225,31 @@
       </div>
     </div>
 
+<!-- كرت الكريبتو -->
+<div class="card" dir="rtl" lang="ar" id="crypto-card">
+  <div class="weather-header">
+    <div>
+      <div class="weather-title">العملات الرقمية</div>
+      <div class="weather-meta" id="crypto-upd">—</div>
+    </div>
+    <button class="weather-btn" id="refreshCrypto">تحديث</button>
+  </div>
+  <ul id="crypto-list" style="list-style:none;margin:0;padding:0"></ul>
+</div>
+
+<!-- كرت الأسهم السعودية -->
+<div class="card" dir="rtl" lang="ar" id="stocks-card">
+  <div class="weather-header">
+    <div>
+      <div class="weather-title">الأسهم السعودية</div>
+      <div class="weather-meta" id="stocks-upd">—</div>
+    </div>
+    <button class="weather-btn" id="refreshStocks">تحديث</button>
+  </div>
+  <ul id="stocks-list" style="list-style:none;margin:0;padding:0"></ul>
+</div>
+
+
     <!-- ✅ صندوق الترندات (مضاف فقط) -->
     <section class="card hashtags-card" id="x-trends" dir="rtl" lang="ar" style="margin-top:22px;">
       <div class="row" style="border-bottom:none; padding:0;">
@@ -607,6 +632,73 @@ document.addEventListener("DOMContentLoaded", () => {
   loadTrends();
   setInterval(loadTrends, 30 * 60 * 1000);
 });
+</script>
+
+<script>
+(function(){
+  const fmt = n => n.toLocaleString("ar-SA");
+  const sign = x => (x>0? "+" : "") + x.toFixed(2) + "%";
+
+  async function loadCrypto(){
+    const list = document.getElementById("crypto-list");
+    const upd  = document.getElementById("crypto-upd");
+    list.innerHTML = "<li>جاري التحميل…</li>";
+    try {
+      const r = await fetch("/.netlify/functions/crypto?ids=bitcoin,ethereum,tether,solana,binance-coin,xrp", { cache: "no-store" });
+      const j = await r.json();
+      list.innerHTML = "";
+      (j.data || []).forEach(c => {
+        const li = document.createElement("li");
+        li.style.display="flex"; li.style.justifyContent="space-between"; li.style.padding="6px 0"; li.style.borderBottom="1px solid rgba(0,0,0,.06)";
+        const left = document.createElement("span");
+        left.textContent = `${c.name} (${c.symbol})`;
+        const right = document.createElement("span");
+        right.textContent = `${fmt(c.price_sar)} ر.س • ${sign(c.change_24h)}`;
+        right.style.color = c.change_24h>=0 ? "#0a7a3d" : "#c62828";
+        li.appendChild(left); li.appendChild(right);
+        list.appendChild(li);
+      });
+      upd.textContent = "آخر تحديث: " + new Date().toLocaleString("ar-SA");
+    } catch(e){
+      list.innerHTML = "<li>تعذّر جلب بيانات العملات.</li>";
+    }
+  }
+
+  async function loadStocks(){
+    const list = document.getElementById("stocks-list");
+    const upd  = document.getElementById("stocks-upd");
+    list.innerHTML = "<li>جاري التحميل…</li>";
+    try {
+      const syms = "2222.SR,2010.SR,7010.SR,1120.SR,1180.SR,2280.SR,^TASI";
+      const r = await fetch("/.netlify/functions/stocks-sa?symbols=" + encodeURIComponent(syms), { cache: "no-store" });
+      const j = await r.json();
+      list.innerHTML = "";
+      (j.data || []).forEach(s => {
+        const li = document.createElement("li");
+        li.style.display="flex"; li.style.justifyContent="space-between"; li.style.padding="6px 0"; li.style.borderBottom="1px solid rgba(0,0,0,.06)";
+        const left = document.createElement("span");
+        left.textContent = s.name + " (" + s.symbol + ")";
+        const right = document.createElement("span");
+        const pct = typeof s.change_percent === "number" ? s.change_percent : 0;
+        right.textContent = `${fmt(s.price)} ${s.currency || "SAR"} • ${sign(pct)}`;
+        right.style.color = pct>=0 ? "#0a7a3d" : "#c62828";
+        li.appendChild(left); li.appendChild(right);
+        list.appendChild(li);
+      });
+      upd.textContent = "آخر تحديث: " + new Date().toLocaleString("ar-SA");
+    } catch(e){
+      list.innerHTML = "<li>تعذّر جلب بيانات الأسهم.</li>";
+    }
+  }
+
+  document.getElementById("refreshCrypto")?.addEventListener("click", loadCrypto);
+  document.getElementById("refreshStocks")?.addEventListener("click", loadStocks);
+
+  // أول تحميل + تحديث تلقائي
+  loadCrypto(); loadStocks();
+  setInterval(loadCrypto, 10 * 60 * 1000); // كل 10 دقائق
+  setInterval(loadStocks, 5 * 60 * 1000);  // كل 5 دقائق
+})();
 </script>
 
 
