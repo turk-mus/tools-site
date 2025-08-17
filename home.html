@@ -236,11 +236,12 @@
 </div>
 
 <!-- نتائج المباريات -->
-<div class="card" id="matches-card" dir="rtl" lang="ar" style="margin-top:16px">
+<section class="card" id="matches-card" dir="rtl" lang="ar" style="margin-top:22px;">
   <div class="weather-header">
     <div class="weather-title">نتائج المباريات</div>
-    <div style="display:flex; gap:6px; align-items:center">
+    <div style="display:flex;gap:8px;align-items:center">
       <select id="matchesLeague" class="weather-btn" style="background:#fff;color:#006c35;border:1px solid #006c35">
+        <option value="">ملخصات عالمية</option>
         <option value="saudi" selected>الدوري السعودي</option>
         <option value="premier">الدوري الإنجليزي</option>
         <option value="la liga">الدوري الإسباني</option>
@@ -249,13 +250,58 @@
         <option value="ligue 1">الدوري الفرنسي</option>
         <option value="champions">دوري الأبطال</option>
       </select>
-      <button id="matchesRefresh" class="weather-btn">تحديث</button>
+      <button id="refreshMatches" class="weather-btn">تحديث</button>
     </div>
   </div>
-  <ul id="matches-list" class="hashtags-list"><li>جاري التحميل...</li></ul>
+  <ul id="matches-list"><li>جاري التحميل…</li></ul>
   <div class="weather-meta">آخر تحديث: <span id="matches-updated">—</span></div>
-</div>
+</section>
 
+<script>
+(() => {
+  const list = document.getElementById('matches-list');
+  const updated = document.getElementById('matches-updated');
+  const sel = document.getElementById('matchesLeague');
+
+  async function loadMatches() {
+    list.innerHTML = '<li>جاري التحميل…</li>';
+    const q = (sel?.value || '').trim();
+    try {
+      const r = await fetch(
+        '/.netlify/functions/matches?q=' + encodeURIComponent(q) + '&limit=12&fallback=1',
+        { cache: 'no-store' }
+      );
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const arr = await r.json();
+
+      list.innerHTML = '';
+      if (!Array.isArray(arr) || arr.length === 0) {
+        list.innerHTML = '<li>لا توجد نتائج حالياً.</li>';
+      } else {
+        arr.forEach(m => {
+          const name = [m.home, m.away].filter(Boolean).join(' × ');
+          const score = m.score ? ` — ${m.score}` : '';
+          const comp = m.comp ? ` <span class="muted">(${m.comp})</span>` : '';
+          const li = document.createElement('li');
+          li.innerHTML = `<strong>${name}</strong>${score}${comp}`;
+          list.appendChild(li);
+        });
+      }
+      updated.textContent = new Date().toLocaleString('ar-EG', { hour12:false });
+    } catch (e) {
+      list.innerHTML = '<li>تعذّر الجلب الآن.</li>';
+      updated.textContent = '';
+      console.warn(e);
+    }
+  }
+
+  document.getElementById('refreshMatches')?.addEventListener('click', loadMatches);
+  sel?.addEventListener('change', loadMatches);
+
+  loadMatches();
+  setInterval(loadMatches, 15 * 60 * 1000);
+})();
+</script>
 
 
 
@@ -685,66 +731,6 @@ const COIN_IDS = 'bitcoin,ethereum,tether,solana,binancecoin,ripple';
 })();
 </script>
 
-<script>
-(() => {
-  const list = document.getElementById('matches-list');
-  const upd  = document.getElementById('matches-updated');
-  const sel  = document.getElementById('matchesLeague');
-  const btn  = document.getElementById('matchesRefresh');
-
-  function fmtDate(s) {
-    if (!s) return '';
-    const d = new Date(s);
-    // مثال: الأحد، 17 أغسطس 2025 21:30
-    return d.toLocaleString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false });
-  }
-
-  function line(o) {
-    const score = o.score ? ` <strong>${o.score}</strong>` : '';
-    const meta  = [o.comp, fmtDate(o.startUTC)].filter(Boolean).join(' • ');
-    const a = o.highlightUrl ? `<a href="${o.highlightUrl}" target="_blank" rel="noopener noreferrer" class="hash-link">الملخص</a>` : '';
-    const li = document.createElement('li');
-    li.style.display = 'flex';
-    li.style.justifyContent = 'space-between';
-    li.style.alignItems = 'center';
-    li.innerHTML = `
-      <div>
-        <div style="font-weight:700">${o.home} ${score} — ${o.away}</div>
-        <div class="muted" style="margin-top:2px">${meta}</div>
-      </div>
-      <div>${a}</div>
-    `;
-    return li;
-  }
-
-  async function loadMatches() {
-    const q = sel?.value || 'saudi';
-    list.innerHTML = '<li>جاري التحميل...</li>';
-    try {
-      const r = await fetch('/.netlify/functions/matches?q=' + encodeURIComponent(q), { cache:'no-store' });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const arr = await r.json();
-      list.innerHTML = '';
-      if (!Array.isArray(arr) || !arr.length) {
-        list.innerHTML = '<li>لا توجد نتائج متاحة حاليًا.</li>';
-      } else {
-        arr.forEach(m => list.appendChild(line(m)));
-      }
-      if (upd) upd.textContent = new Date().toLocaleString('ar-EG', { hour12:false });
-    } catch (e) {
-      list.innerHTML = '<li>تعذّر الجلب الآن.</li>';
-      if (upd) upd.textContent = '';
-      console.warn(e);
-    }
-  }
-
-  sel?.addEventListener('change', loadMatches);
-  btn?.addEventListener('click', loadMatches);
-  loadMatches();
-  // تحديث تلقائي كل 15 دقيقة
-  setInterval(loadMatches, 15 * 60 * 1000);
-})();
-</script>
 
 
 
