@@ -236,14 +236,33 @@
 </div>
 
 <!-- الأسهم السعودية -->
-<div class="card">
-  <div class="weather-header">
-    <div class="weather-title">الأسهم السعودية</div>
-    <button id="stocksRefresh" class="weather-btn">تحديث</button>
-  </div>
-  <ul id="stocks-list"><li>—</li></ul>
-  <div class="weather-meta">آخر تحديث: <span id="stocks-updated">—</span></div>
+<!-- TradingView: Mini Symbol Overview (Saudi) -->
+<div class="tradingview-widget-container" dir="ltr" style="margin-top:12px">
+  <div class="tradingview-widget-container__widget"></div>
+  <script async src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js">
+  {
+    "symbols": [
+      ["TADAWUL:2222","أرامكو"],
+      ["TADAWUL:2010","سابك"],
+      ["TADAWUL:7010","STC"],
+      ["TADAWUL:1120","الراجحي"],
+      ["TADAWUL:1180","بنك الرياض"],
+      ["TADAWUL:2280","المراعي"]
+    ],
+    "chartOnly": false,
+    "width": "100%",
+    "height": "320",
+    "locale": "ar",
+    "colorTheme": "light",
+    "isTransparent": false,
+    "autosize": true,
+    "showVolume": true,
+    "showMA": true
+  }
+  </script>
+  <div class="weather-meta" style="margin-top:6px">تنبيه: البيانات متأخرة ~15 دقيقة.</div>
 </div>
+
 
 
 
@@ -673,47 +692,27 @@ document.addEventListener("DOMContentLoaded", () => {
 })();
 </script>
 
-<script>
-(() => {
-  const list   = document.getElementById('stocks-list');
-  const upd    = document.getElementById('stocks-updated');
-  const btn    = document.getElementById('stocksRefresh');
-
-  // رموز أمثلة: أرامكو، سابك، إس تي سي، الراجحي، الأهلي، المراعي، والمؤشر العام
-  const SA_SYMBOLS = '2222.SR,2010.SR,7010.SR,1120.SR,1180.SR,2280.SR,^TASI';
-  const nf = new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  async function loadStocks() {
-    if (!list) return;
-    list.innerHTML = '<li>جاري التحميل…</li>';
-    try {
-      const r = await fetch('/.netlify/functions/stocks-sa?symbols=' + encodeURIComponent(SA_SYMBOLS), { cache: 'no-store' });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const arr = await r.json();
-
-      list.innerHTML = '';
-      arr.forEach(s => {
-        const ch = s.changePercent ?? s.change_percent;
-        const li = document.createElement('li');
-        const chStr = (ch == null) ? '' : ((ch >= 0 ? '▲ ' : '▼ ') + nf.format(ch) + '%');
-        li.innerHTML = `<strong>${s.name || s.symbol}</strong>: ${nf.format(s.price)} <span style="opacity:.8">${chStr}</span>`;
-        li.style.color = (ch ?? 0) >= 0 ? '#0a8f55' : '#c0392b';
-        list.appendChild(li);
-      });
-
-      if (upd) upd.textContent = new Date().toLocaleString('ar-EG', { hour12: false });
-    } catch (e) {
-      list.innerHTML = '<li>تعذّر الجلب الآن.</li>';
-      if (upd) upd.textContent = '';
-    }
+<!-- TradingView: Ticker Tape (Saudi) -->
+<div class="tradingview-widget-container" dir="ltr" style="margin-top:16px">
+  <div class="tradingview-widget-container__widget"></div>
+  <script async src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js">
+  {
+    "symbols": [
+      { "proName": "TADAWUL:2222", "title": "أرامكو" },
+      { "proName": "TADAWUL:2010", "title": "سابك" },
+      { "proName": "TADAWUL:7010", "title": "STC" },
+      { "proName": "TADAWUL:1120", "title": "الراجحي" },
+      { "proName": "TADAWUL:1180", "title": "بنك الرياض" },
+      { "proName": "TADAWUL:2280", "title": "المراعي" }
+    ],
+    "showSymbolLogo": true,
+    "isTransparent": false,
+    "displayMode": "adaptive",
+    "locale": "ar"
   }
+  </script>
+</div>
 
-  btn?.addEventListener('click', loadStocks);
-  loadStocks();
-  // تحديث تلقائي كل 15 دقيقة
-  setInterval(loadStocks, 15 * 60 * 1000);
-})();
-</script>
 
 
 
