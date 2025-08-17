@@ -235,81 +235,26 @@
   <div class="weather-meta">آخر تحديث: <span id="crypto-updated">—</span></div>
 </div>
 
-<!-- الأسهم السعودية (TradingView: Symbol Info, بدون رسم بياني) -->
-<div class="card" id="stocks-tvw" dir="rtl" lang="ar" style="margin-top:12px">
+<!-- نتائج المباريات -->
+<div class="card" id="matches-card" dir="rtl" lang="ar" style="margin-top:16px">
   <div class="weather-header">
-    <div class="weather-title">الأسهم السعودية</div>
-    <button id="tvwRefresh" class="weather-btn">تحديث</button>
+    <div class="weather-title">نتائج المباريات</div>
+    <div style="display:flex; gap:6px; align-items:center">
+      <select id="matchesLeague" class="weather-btn" style="background:#fff;color:#006c35;border:1px solid #006c35">
+        <option value="saudi" selected>الدوري السعودي</option>
+        <option value="premier">الدوري الإنجليزي</option>
+        <option value="la liga">الدوري الإسباني</option>
+        <option value="serie a">الدوري الإيطالي</option>
+        <option value="bundesliga">الدوري الألماني</option>
+        <option value="ligue 1">الدوري الفرنسي</option>
+        <option value="champions">دوري الأبطال</option>
+      </select>
+      <button id="matchesRefresh" class="weather-btn">تحديث</button>
+    </div>
   </div>
-
-  <style>
-    .stocks-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-    @media(max-width:640px){.stocks-grid{grid-template-columns:1fr}}
-    .stock-cell{border:1px solid rgba(0,0,0,.06);border-radius:12px;padding:6px;background:#fff}
-    .dark-mode .stock-cell{background:#1e1e1e;border-color:rgba(255,255,255,.08)}
-    .stock-cell .tradingview-widget-container{height:60px;overflow:hidden}
-  </style>
-
-  <div class="stocks-grid" id="tvwGrid"></div>
-  <div class="weather-meta">الأسعار من TradingView — قد تكون متأخرة ~15 دقيقة.</div>
+  <ul id="matches-list" class="hashtags-list"><li>جاري التحميل...</li></ul>
+  <div class="weather-meta">آخر تحديث: <span id="matches-updated">—</span></div>
 </div>
-
-<script>
-(() => {
-  const symbols = [
-    { tv:'TADAWUL:2222', name:'أرامكو' },
-    { tv:'TADAWUL:2010', name:'سابك' },
-    { tv:'TADAWUL:7010', name:'STC' },
-    { tv:'TADAWUL:1120', name:'مصرف الراجحي' },
-    { tv:'TADAWUL:1180', name:'الأهلي السعودي' },
-    { tv:'TADAWUL:2280', name:'المراعي' },
-  ];
-
-  const grid = document.getElementById('tvwGrid');
-
-  function render() {
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    const theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
-
-    symbols.forEach(s => {
-      const cell = document.createElement('div');
-      cell.className = 'stock-cell';
-
-      const container = document.createElement('div');
-      container.className = 'tradingview-widget-container';
-      container.setAttribute('dir', 'ltr');
-
-      const widget = document.createElement('div');
-      widget.className = 'tradingview-widget-container__widget';
-
-      // سكربت TradingView مع الإعدادات كـ JSON
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js';
-      script.innerHTML = JSON.stringify({
-        symbol: s.tv,
-        locale: "ar",
-        colorTheme: theme,
-        isTransparent: false,
-        displayMode: "compact",
-        width: "100%",
-        height: 52
-      });
-
-      container.appendChild(widget);
-      container.appendChild(script);
-      cell.appendChild(container);
-      grid.appendChild(cell);
-    });
-  }
-
-  render();
-  document.getElementById('tvwRefresh')?.addEventListener('click', render);
-})();
-</script>
-
 
 
 
@@ -740,6 +685,66 @@ const COIN_IDS = 'bitcoin,ethereum,tether,solana,binancecoin,ripple';
 })();
 </script>
 
+<script>
+(() => {
+  const list = document.getElementById('matches-list');
+  const upd  = document.getElementById('matches-updated');
+  const sel  = document.getElementById('matchesLeague');
+  const btn  = document.getElementById('matchesRefresh');
+
+  function fmtDate(s) {
+    if (!s) return '';
+    const d = new Date(s);
+    // مثال: الأحد، 17 أغسطس 2025 21:30
+    return d.toLocaleString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false });
+  }
+
+  function line(o) {
+    const score = o.score ? ` <strong>${o.score}</strong>` : '';
+    const meta  = [o.comp, fmtDate(o.startUTC)].filter(Boolean).join(' • ');
+    const a = o.highlightUrl ? `<a href="${o.highlightUrl}" target="_blank" rel="noopener noreferrer" class="hash-link">الملخص</a>` : '';
+    const li = document.createElement('li');
+    li.style.display = 'flex';
+    li.style.justifyContent = 'space-between';
+    li.style.alignItems = 'center';
+    li.innerHTML = `
+      <div>
+        <div style="font-weight:700">${o.home} ${score} — ${o.away}</div>
+        <div class="muted" style="margin-top:2px">${meta}</div>
+      </div>
+      <div>${a}</div>
+    `;
+    return li;
+  }
+
+  async function loadMatches() {
+    const q = sel?.value || 'saudi';
+    list.innerHTML = '<li>جاري التحميل...</li>';
+    try {
+      const r = await fetch('/.netlify/functions/matches?q=' + encodeURIComponent(q), { cache:'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const arr = await r.json();
+      list.innerHTML = '';
+      if (!Array.isArray(arr) || !arr.length) {
+        list.innerHTML = '<li>لا توجد نتائج متاحة حاليًا.</li>';
+      } else {
+        arr.forEach(m => list.appendChild(line(m)));
+      }
+      if (upd) upd.textContent = new Date().toLocaleString('ar-EG', { hour12:false });
+    } catch (e) {
+      list.innerHTML = '<li>تعذّر الجلب الآن.</li>';
+      if (upd) upd.textContent = '';
+      console.warn(e);
+    }
+  }
+
+  sel?.addEventListener('change', loadMatches);
+  btn?.addEventListener('click', loadMatches);
+  loadMatches();
+  // تحديث تلقائي كل 15 دقيقة
+  setInterval(loadMatches, 15 * 60 * 1000);
+})();
+</script>
 
 
 
