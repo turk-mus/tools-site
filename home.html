@@ -234,6 +234,7 @@
   <ul id="crypto-list"><li>—</li></ul>
   <div class="weather-meta">آخر تحديث: <span id="crypto-updated">—</span></div>
 </div>
+
 <!-- نتائج المباريات (مربع صغير + المزيد) -->
 <section class="card" id="matches-mini" dir="rtl" lang="ar" style="margin-top:22px;">
   <div class="weather-header" style="gap:8px;align-items:center">
@@ -287,7 +288,6 @@
 
   let expanded = false; // false => مباراتين، true => الكل (حتى 12)
 
-  // تحويل قيمة القائمة إلى نص يبحث به المزوّد
   const Q_MAP = {
     '': '',
     'saudi':'Saudi Pro League',
@@ -299,7 +299,6 @@
     'champions':'UEFA Champions League',
   };
 
-  // تعريب بسيط للأسماء الشائعة
   const AR_MAP = {
     'Saudi Pro League':'الدوري السعودي',
     'Premier League':'الدوري الإنجليزي',
@@ -318,17 +317,17 @@
     'Barcelona':'برشلونة','Real Madrid':'ريال مدريد','Atletico Madrid':'أتلتيكو مدريد','Inter':'إنتر','AC Milan':'ميلان','Juventus':'يوفنتوس',
     'Bayern Munich':'بايرن ميونخ','Paris Saint-Germain':'باريس سان جيرمان'
   };
+  const reEscape = s => s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
   function ar(s){
     if(!s) return s;
     let out = s;
-    for(const [en,ar] of Object.entries(AR_MAP)){
-      const re = new RegExp('\\b'+en.replace(/[-\\/\\^$*+?.()|[\\]{}]/g,'\\$&')+'\\b','gi');
-      out = out.replace(re, ar);
+    for(const [en,arName] of Object.entries(AR_MAP)){
+      const re = new RegExp('\\b'+reEscape(en)+'\\b','gi');
+      out = out.replace(re, arName);
     }
     return out;
   }
 
-  // التقاط التاريخ من عدة حقول محتملة
   function pickDate(m){
     const cand = m?.date || m?.utcDate || m?.datetime || m?.kickoff || m?.time || m?.ts || m?.timestamp || m?.startTime || m?.match_time || m?.fixture?.date;
     if (!cand) return null;
@@ -350,10 +349,34 @@
     return null;
   }
 
-  // استخراج أسماء الفرق والنتيجة
+  // لو جاءنا عنوان مثل "Team A - Team B" أو "A vs B" نفصّله
+  function splitTitle(t){
+    if (!t) return [null,null];
+    const seps = [' - ',' – ',' — ',' vs ',' VS ',' Vs ','×',' x ',' ضد '];
+    for (const s of seps){
+      if (t.includes(s)){
+        const [a,b] = t.split(s).map(x => ar(x.trim()));
+        return [a||null, b||null];
+      }
+    }
+    return [null,null];
+  }
+
   function extractTeamsScore(m){
-    const home = ar(m.home || m.homeTeam || m.team1 || m.teams?.home || m.h || m.ht || m?.fixture?.teams?.home?.name || '');
-    const away = ar(m.away || m.awayTeam || m.team2 || m.teams?.away || m.a || m.at || m?.fixture?.teams?.away?.name || '');
+    // أسماء فرق محتملة
+    const home =
+      ar(m.home || m.homeTeam || m.home_name || m.team1 || m.team_home ||
+         m?.teams?.home || m?.teams?.home?.name || m?.fixture?.teams?.home?.name ||
+         m.h || m.ht || '') ||
+      splitTitle(m.title || m.match || m.name || '')[0];
+
+    const away =
+      ar(m.away || m.awayTeam || m.away_name || m.team2 || m.team_away ||
+         m?.teams?.away || m?.teams?.away?.name || m?.fixture?.teams?.away?.name ||
+         m.a || m.at || '') ||
+      splitTitle(m.title || m.match || m.name || '')[1];
+
+    // نتيجة محتملة
     let homeG, awayG;
     if (typeof m.score === 'string'){
       const mm = m.score.match(/(-?\d+)\s*[-:–]\s*(-?\d+)/);
@@ -364,15 +387,15 @@
     if (homeG==null && Number.isFinite(m.homeScore) && Number.isFinite(m.awayScore)) { homeG=m.homeScore; awayG=m.awayScore; }
     if (homeG==null && m.result && Number.isFinite(m.result?.home) && Number.isFinite(m.result?.away)) { homeG=m.result.home; awayG=m.result.away; }
     if (homeG==null && m?.fixture?.goals && Number.isFinite(m.fixture.goals.home) && Number.isFinite(m.fixture.goals.away)) { homeG=m.fixture.goals.home; awayG=m.fixture.goals.away; }
+
     return { home, away, homeG, awayG };
   }
 
-  // محاولة جلب شعار الفريق
-  function getLogo(m, side /* 'home' | 'away' */){
-    const paths = side === 'home'
-      ? [m.homeLogo, m.home_logo, m?.logos?.home, m?.teams?.homeLogo, m?.teams?.home?.logo, m?.fixture?.teams?.home?.logo, m.homeCrest, m?.home_team_logo]
-      : [m.awayLogo, m.away_logo, m?.logos?.away, m?.teams?.awayLogo, m?.teams?.away?.logo, m?.fixture?.teams?.away?.logo, m.awayCrest, m?.away_team_logo];
-    for (const p of paths){
+  function getLogo(m, side){
+    const cands = side === 'home'
+      ? [m.homeLogo, m.home_logo, m.home_logo_url, m.homeTeamLogo, m?.logos?.home, m?.teams?.homeLogo, m?.teams?.home?.logo, m?.fixture?.teams?.home?.logo, m.homeCrest, m?.home_team_logo]
+      : [m.awayLogo, m.away_logo, m.away_logo_url, m.awayTeamLogo, m?.logos?.away, m?.teams?.awayLogo, m?.teams?.away?.logo, m?.fixture?.teams?.away?.logo, m.awayCrest, m?.away_team_logo];
+    for (const p of cands){
       if (typeof p === 'string' && /^https?:\/\//i.test(p)) return p;
     }
     return null;
@@ -423,6 +446,7 @@
     try{
       const r = await fetch('/.netlify/functions/matches?q=' + encodeURIComponent(q) + '&limit=' + (limit ?? (expanded?12:2)) + '&fallback=1', { cache:'no-store' });
       const arr = r.ok ? await r.json() : [];
+      // console.log('matches sample:', arr.slice(0,3)); // لفحص شكل البيانات إن احتجت
       if (!Array.isArray(arr) || arr.length === 0){
         listEl.innerHTML = `<li class="mini-row"><div class="name">لا توجد نتائج حالياً.</div></li>`;
       } else {
@@ -438,12 +462,10 @@
     btnMore.textContent = expanded ? 'إخفاء' : 'المزيد';
   }
 
-  // تفعيل الأزرار
   btnRef?.addEventListener('click', () => load());
   btnMore?.addEventListener('click', () => { expanded = !expanded; load(); });
   sel?.addEventListener('change', () => { expanded = false; load(2); });
 
-  // تحميل أولي + تحديث دوري
   load(2);
   setInterval(() => load(expanded ? 12 : 2), 15 * 60 * 1000);
 })();
