@@ -10,79 +10,44 @@ export const handler = async (event) => {
   }
 
   try {
-    // الرموز من الاستعلام أو افتراضي:
-    const q = event.queryStringParameters || {};
-    const def = ["2222.SR","2010.SR","7010.SR","1120.SR","1180.SR","2280.SR","^TASI"];
-    const raw = (q.symbols && q.symbols.trim()) ? q.symbols.split(",") : def;
-
-    // تأكد من امتداد .SR للرموز الرقمية لو نُسِيَت:
-    const symbols = raw.map(s => {
-      const t = s.trim();
-      if (!t) return null;
-      if (t.startsWith("^")) return t;          // مؤشرات مثل ^TASI
-      if (/\.\w+$/i.test(t)) return t;          // فيه امتداد أصلاً
-      if (/^\d{3,4}$/.test(t)) return `${t}.SR`; // رقم بدون امتداد
-      return t;
-    }).filter(Boolean);
-
+    const qs = new URLSearchParams(event.queryStringParameters || {});
+    const symbols = (qs.get("symbols") || "")
+      .split(",").map(s => s.trim()).filter(Boolean);
     if (!symbols.length) {
-      return {
-        statusCode: 400,
-        headers: baseHeaders,
-        body: JSON.stringify({ error: "no symbols" })
-      };
+      return { statusCode: 400, headers: baseHeaders,
+        body: JSON.stringify({ error: "symbols required" }) };
     }
 
-    // Yahoo يحتاج الترميز لكل رمز (خصوصًا ^TASI)
-    const encoded = symbols.map(encodeURIComponent).join("%2C");
-    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encoded}`;
-
-    const r = await fetch(url, {
-      headers: {
-        "Accept": "application/json",
-        // UA لتفادي بعض الحمايات
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
-      }
-    });
-
-    const txt = await r.text();
-    if (!r.ok) {
-      return {
-        statusCode: 502,
-        headers: baseHeaders,
-        body: JSON.stringify({ upstreamStatus: r.status, upstreamOk: false, data: txt.slice(0,400) })
-      };
+    const KEY = process.env.EODHD_API_KEY || qs.get("key"); // key=... للاختبار فقط
+    if (!KEY) {
+      return { statusCode: 500, headers: baseHeaders,
+        body: JSON.stringify({ error: "missing EODHD_API_KEY" }) };
     }
 
-    const j = JSON.parse(txt);
-    const rows = (j?.quoteResponse?.result || []).map(v => ({
-      symbol: v.symbol,
-      name: v.shortName || v.longName || v.displayName || v.symbol,
-      exchange: v.fullExchangeName || v.exchange,
-      price: v.regularMarketPrice ?? null,
-      change: v.regularMarketChange ?? null,
-      changePercent: v.regularMarketChangePercent ?? null,
-      currency: v.currency || null,
-      marketState: v.marketState || null,
-      time: v.regularMarketTime ? (v.regularMarketTime * 1000) : null
-    }));
+    const fetchOne = async (sym) => {
+      const url = `https://eodhd.com/api/real-time/${encodeURIComponent(sym)}?api_token=${encodeURIComponent(KEY)}&fmt=json`;
+      const r = await fetch(url, { headers: { "User-Agent": "as3aralywm/1.0" } });
+      const txt = await r.text();
+      let data; try { data = JSON.parse(txt); } catch {}
+      if (!r.ok) return { symbol: sym, ok: false, upstreamStatus: r.status, data: data || txt };
+      return {
+        symbol: sym, ok: true,
+        price: data?.close, changePct: data?.change_p, raw: data
+      };
+    };
 
+    const out = await Promise.all(symbols.map(fetchOne));
     return {
       statusCode: 200,
       headers: {
         ...baseHeaders,
-        "Content-Type": "application/json; charset=utf-8",
-        // كاش على حافة نتلايفي
-        "Netlify-CDN-Cache-Control": "public, s-maxage=300, stale-while-revalidate=60",
-        "Cache-Control": "public, max-age=0, must-revalidate"
+        "Content-Type": "application/json",
+        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=30",
       },
-      body: JSON.stringify({ ok: true, count: rows.length, results: rows })
+      body: JSON.stringify(out),
     };
   } catch (e) {
-    return {
-      statusCode: 500,
-      headers: baseHeaders,
-      body: JSON.stringify({ ok:false, error: e?.message || "stocks-sa failed" })
-    };
+    return { statusCode: 500, headers: baseHeaders,
+      body: JSON.stringify({ error: e?.message || "stocks-sa failed" }) };
   }
 };
