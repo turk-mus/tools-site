@@ -234,8 +234,7 @@
   <ul id="crypto-list"><li>—</li></ul>
   <div class="weather-meta">آخر تحديث: <span id="crypto-updated">—</span></div>
 </div>
-
-<!-- نتائج المباريات -->
+<!-- نتائج المباريات (فِرق + نتيجة + تاريخ) -->
 <section class="card" id="matches-card" dir="rtl" lang="ar" style="margin-top:22px;">
   <div class="weather-header">
     <div class="weather-title">نتائج المباريات</div>
@@ -254,12 +253,15 @@
     </div>
   </div>
 
-  <!-- ستايل قائمة النتائج -->
   <style>
+    /* تنسيقات صفوف النتائج */
     #matches-list{list-style:none;margin:0;padding:0}
-    #matches-list li{padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06)}
-    .dark-mode #matches-list li{border-color:rgba(255,255,255,.06)}
-    .muted{font-size:12px;opacity:.75}
+    .match-row{padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+    .dark-mode .match-row{border-color:rgba(255,255,255,.08)}
+    .teams{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700}
+    .teams .team{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .teams .score{min-width:72px;text-align:center;font-variant-numeric:tabular-nums}
+    .meta{margin-top:4px;font-size:12px;opacity:.8}
   </style>
 
   <ul id="matches-list"><li>جاري التحميل…</li></ul>
@@ -272,7 +274,7 @@
   const updated = document.getElementById('matches-updated');
   const sel = document.getElementById('matchesLeague');
 
-  // خريطة: مفاتيح = إنجليزي من المصدر -> قيمة = عربي
+  /* خريطة تعريب لأسماء الدوريات والأندية الشائعة */
   const AR_MAP = {
     // بطولات
     'Saudi Pro League': 'الدوري السعودي',
@@ -284,54 +286,18 @@
     'Ligue 1': 'الدوري الفرنسي',
     'UEFA Champions League': 'دوري أبطال أوروبا',
     'AFC Champions League': 'دوري أبطال آسيا',
-
-    // أندية سعودية (زوّدها وقت ما تحتاج)
-    'Al Hilal': 'الهلال',
-    'Al Nassr': 'النصر',
-    'Al Ittihad': 'الاتحاد',
-    'Al Ahli': 'الأهلي',
-    'Al Shabab': 'الشباب',
-    'Al Raed': 'الرائد',
-    'Al Taawoun': 'التعاون',
-    'Al Ettifaq': 'الاتفاق',
-    'Al Fateh': 'الفتح',
-    'Abha': 'أبها',
-    'Damac': 'ضمك',
-    'Al Fayha': 'الفيحاء',
-    'Al Riyadh': 'الرياض',
-    'Al Okhdood': 'الأخدود',
-    'Al Khaleej': 'الخليج',
-    'Al Hazem': 'الحزم',
-    'Al Tai': 'الطائي',
-
-    // أمثلة أندية عالمية شائعة
-    'Manchester City': 'مانشستر سيتي',
-    'Manchester United': 'مانشستر يونايتد',
-    'Liverpool': 'ليفربول',
-    'Arsenal': 'أرسنال',
-    'Chelsea': 'تشيلسي',
-    'Barcelona': 'برشلونة',
-    'Real Madrid': 'ريال مدريد',
-    'Atletico Madrid': 'أتلتيكو مدريد',
-    'Inter': 'إنتر',
-    'AC Milan': 'ميلان',
-    'Juventus': 'يوفنتوس',
-    'Bayern Munich': 'بايرن ميونخ',
-    'Paris Saint-Germain': 'باريس سان جيرمان',
+    // أندية سعودية
+    'Al Hilal': 'الهلال','Al Nassr':'النصر','Al Ittihad':'الاتحاد','Al Ahli':'الأهلي','Al Shabab':'الشباب',
+    'Al Raed':'الرائد','Al Taawoun':'التعاون','Al Ettifaq':'الاتفاق','Al Fateh':'الفتح','Abha':'أبها',
+    'Damac':'ضمك','Al Fayha':'الفيحاء','Al Riyadh':'الرياض','Al Okhdood':'الأخدود','Al Khaleej':'الخليج',
+    'Al Hazem':'الحزم','Al Tai':'الطائي',
+    // أمثلة عالمية
+    'Manchester City':'مانشستر سيتي','Manchester United':'مانشستر يونايتد','Liverpool':'ليفربول','Arsenal':'أرسنال','Chelsea':'تشيلسي',
+    'Barcelona':'برشلونة','Real Madrid':'ريال مدريد','Atletico Madrid':'أتلتيكو مدريد','Inter':'إنتر','AC Milan':'ميلان',
+    'Juventus':'يوفنتوس','Bayern Munich':'بايرن ميونخ','Paris Saint-Germain':'باريس سان جيرمان'
   };
 
-  // تحويل نص إنجليزي إلى عربي حسب القاموس
-  function arabizeText(s) {
-    if (!s) return s;
-    let out = s;
-    for (const [en, ar] of Object.entries(AR_MAP)) {
-      const re = new RegExp('\\b' + en.replace(/[-\\/\\^$*+?.()|[\\]{}]/g, '\\$&') + '\\b', 'gi');
-      out = out.replace(re, ar);
-    }
-    return out.replace(/\s*-\s*/g, ' - ');
-  }
-
-  // تحويل قيمة القائمة إلى صيغة يبحث فيها المزوّد
+  /* تحويل قيمة القائمة لقيمة يبحث فيها المزود */
   const Q_MAP = {
     '': '',
     'saudi': 'Saudi Pro League',
@@ -343,28 +309,120 @@
     'champions': 'UEFA Champions League',
   };
 
-  // توحيد وتحضير السطر من العنصر (مهما اختلفت الحقول)
-  function lineFromItem(m) {
-    if (typeof m === 'string') return arabizeText(m);
+  /* تعريب نص وفق القاموس */
+  function arName(s){
+    if(!s) return s;
+    let out = s;
+    for(const [en, ar] of Object.entries(AR_MAP)){
+      const re = new RegExp('\\b' + en.replace(/[-\\/\\^$*+?.()|[\\]{}]/g,'\\$&') + '\\b','gi');
+      out = out.replace(re, ar);
+    }
+    return out;
+  }
 
-    const home = m.home || m.homeTeam || m.team1 || m.teams?.home || m.h || m.ht || m?.fixture?.teams?.home?.name;
-    const away = m.away || m.awayTeam || m.team2 || m.teams?.away || m.a || m.at || m?.fixture?.teams?.away?.name;
-    const name = [home, away].filter(Boolean).join(' × ') || m.title || m.name || '';
+  /* محاولة استخراج التاريخ من عدة حقول محتملة */
+  function pickDate(m){
+    const cand = m?.date || m?.utcDate || m?.datetime || m?.kickoff || m?.time || m?.ts || m?.timestamp || m?.startTime || m?.match_time || m?.fixture?.date;
+    if (!cand) return null;
 
-    let score = '';
-    if (typeof m.score === 'string') score = m.score;
-    else if (Array.isArray(m.ft)) score = m.ft.join('-');
-    else if (Number.isFinite(m.goals?.home) && Number.isFinite(m.goals?.away)) {
-      score = `${m.goals.home}-${m.goals.away}`;
+    if (typeof cand === 'number'){
+      // ثواني أم ملّي ثانية؟
+      const ms = cand < 1e12 ? cand * 1000 : cand;
+      const d = new Date(ms);
+      return isNaN(d) ? null : d;
+    }
+    if (typeof cand === 'string'){
+      // إذا كان رقم كسلسلة
+      if (/^\d+$/.test(cand)){
+        const n = Number(cand);
+        const ms = n < 1e12 ? n * 1000 : n;
+        const d = new Date(ms);
+        return isNaN(d) ? null : d;
+      }
+      const d = new Date(cand);
+      return isNaN(d) ? null : d;
+    }
+    return null;
+  }
+
+  /* استخراج أسماء الفرق والنتيجة */
+  function extractTeamsScore(m){
+    // أسماء
+    const home = arName(m.home || m.homeTeam || m.team1 || m.teams?.home || m.h || m.ht || m?.fixture?.teams?.home?.name || '');
+    const away = arName(m.away || m.awayTeam || m.team2 || m.teams?.away || m.a || m.at || m?.fixture?.teams?.away?.name || '');
+
+    // نتيجة
+    let homeG, awayG;
+
+    if (typeof m.score === 'string'){
+      // "2-1" مثلا
+      const mm = m.score.match(/(-?\d+)\s*[-:–]\s*(-?\d+)/);
+      if (mm){ homeG = mm[1]; awayG = mm[2]; }
+    }
+    if (homeG == null && Array.isArray(m.ft)){ homeG = m.ft[0]; awayG = m.ft[1]; }
+    if (homeG == null && m.goals && Number.isFinite(m.goals.home) && Number.isFinite(m.goals.away)) {
+      homeG = m.goals.home; awayG = m.goals.away;
+    }
+    if (homeG == null && Number.isFinite(m.homeScore) && Number.isFinite(m.awayScore)) {
+      homeG = m.homeScore; awayG = m.awayScore;
+    }
+    if (homeG == null && m.result && Number.isFinite(m.result?.home) && Number.isFinite(m.result?.away)){
+      homeG = m.result.home; awayG = m.result.away;
+    }
+    if (homeG == null && m?.fixture?.goals && Number.isFinite(m.fixture.goals.home) && Number.isFinite(m.fixture.goals.away)){
+      homeG = m.fixture.goals.home; awayG = m.fixture.goals.away;
     }
 
-    const comp = m.comp || m.league || m.competition || m.tournament || m?.fixture?.league?.name || '';
+    return { home, away, homeG, awayG };
+  }
 
-    const main = arabizeText(name || (score ? `نتيجة: ${score}` : ''));
-    const compAr = arabizeText(comp);
-    const scoreStr = score && name ? ` — ${score}` : (score || '');
+  /* تعريب حالة المباراة */
+  function statusAr(s){
+    const x = String(s||'').toUpperCase();
+    if (['FT','FINISHED','ENDED'].includes(x)) return 'نهائي';
+    if (['LIVE','IN_PLAY'].includes(x)) return 'جارية';
+    if (['HT'].includes(x)) return 'استراحة';
+    if (['NS','SCHEDULED','UPCOMING'].includes(x)) return 'قادمة';
+    if (!s) return '';
+    return s; // كما هي
+  }
 
-    return main + scoreStr + (compAr ? ` <span class="muted">(${compAr})</span>` : '');
+  /* بناء صف HTML واحد */
+  function rowFromItem(m){
+    // بعض المصادر ترجع نص فقط
+    if (typeof m === 'string'){
+      return `
+        <li class="match-row">
+          <div class="teams"><span class="team">${arName(m)}</span></div>
+        </li>`;
+    }
+
+    const { home, away, homeG, awayG } = extractTeamsScore(m);
+    const comp = arName(m.comp || m.league || m.competition || m.tournament || m?.fixture?.league?.name || '');
+    const st = statusAr(m.status || m.state || m.match_status || m?.fixture?.status?.short);
+    const d = pickDate(m);
+    const dateStr = d ? d.toLocaleString('ar-SA', { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false }) : '';
+
+    // لو ما فيه فرق واضحة، استخدم عنوان عام إن وجد
+    if (!home && !away){
+      const title = arName(m.title || m.name || 'مباراة');
+      return `
+        <li class="match-row">
+          <div class="teams"><span class="team">${title}</span></div>
+          <div class="meta">${[dateStr, comp, st].filter(Boolean).join(' • ')}</div>
+        </li>`;
+    }
+
+    const scoreTxt = (homeG != null && awayG != null) ? `${homeG} - ${awayG}` : '—';
+    return `
+      <li class="match-row">
+        <div class="teams">
+          <span class="team">${home || '—'}</span>
+          <span class="score">${scoreTxt}</span>
+          <span class="team">${away || '—'}</span>
+        </div>
+        <div class="meta">${[dateStr, comp, st].filter(Boolean).join(' • ')}</div>
+      </li>`;
   }
 
   async function loadMatches() {
@@ -372,7 +430,6 @@
 
     const raw = (sel?.value || '').trim();
     const query = Q_MAP[raw] ?? raw;   // يحوّل saudi -> Saudi Pro League
-
     try {
       const r = await fetch(
         '/.netlify/functions/matches?q=' + encodeURIComponent(query) + '&limit=12&fallback=1',
@@ -381,19 +438,14 @@
       const arr = r.ok ? await r.json() : [];
 
       list.innerHTML = '';
-      if (!Array.isArray(arr) || arr.length === 0) {
-        list.innerHTML = '<li>لا توجد نتائج حالياً.</li>';
+      if (!Array.isArray(arr) || arr.length === 0){
+        list.innerHTML = '<li class="match-row"><div class="teams"><span class="team">لا توجد نتائج حالياً.</span></div></li>';
       } else {
-        arr.forEach(m => {
-          const li = document.createElement('li');
-          li.innerHTML = lineFromItem(m) || '<span class="muted">عنصر غير معروف</span>';
-          list.appendChild(li);
-        });
+        list.innerHTML = arr.map(rowFromItem).join('');
       }
-
       updated.textContent = new Date().toLocaleString('ar-EG', { hour12:false });
     } catch (e) {
-      list.innerHTML = '<li>تعذّر الجلب الآن.</li>';
+      list.innerHTML = '<li class="match-row"><div class="teams"><span class="team">تعذّر الجلب الآن.</span></div></li>';
       updated.textContent = '';
       console.warn(e);
     }
