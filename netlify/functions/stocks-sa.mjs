@@ -4,78 +4,85 @@ export const handler = async (event) => {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
-    // قلّل ضغط الطلبات على ياهو + اسمح بالقديم أثناء التحديث
-    "Netlify-CDN-Cache-Control": "public, s-maxage=300, stale-while-revalidate=60",
-    "Content-Type": "application/json; charset=utf-8",
   };
-
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: baseHeaders, body: "" };
   }
 
   try {
-    const qs = new URLSearchParams(event.queryStringParameters || {});
-    const raw = (qs.get("symbols") || "").trim();
-    if (!raw) {
-      return { statusCode: 400, headers: baseHeaders, body: JSON.stringify({ error: "symbols required" }) };
+    // الرموز من الاستعلام أو افتراضي:
+    const q = event.queryStringParameters || {};
+    const def = ["2222.SR","2010.SR","7010.SR","1120.SR","1180.SR","2280.SR","^TASI"];
+    const raw = (q.symbols && q.symbols.trim()) ? q.symbols.split(",") : def;
+
+    // تأكد من امتداد .SR للرموز الرقمية لو نُسِيَت:
+    const symbols = raw.map(s => {
+      const t = s.trim();
+      if (!t) return null;
+      if (t.startsWith("^")) return t;          // مؤشرات مثل ^TASI
+      if (/\.\w+$/i.test(t)) return t;          // فيه امتداد أصلاً
+      if (/^\d{3,4}$/.test(t)) return `${t}.SR`; // رقم بدون امتداد
+      return t;
+    }).filter(Boolean);
+
+    if (!symbols.length) {
+      return {
+        statusCode: 400,
+        headers: baseHeaders,
+        body: JSON.stringify({ error: "no symbols" })
+      };
     }
 
-    // رمّز كل رمز لوحده (خصوصًا ^TASI)
-    const symbols = raw.split(",").map(s => s.trim()).filter(Boolean);
-    const joined = symbols.map(s => encodeURIComponent(s)).join(",");
+    // Yahoo يحتاج الترميز لكل رمز (خصوصًا ^TASI)
+    const encoded = symbols.map(encodeURIComponent).join("%2C");
+    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encoded}`;
 
-    const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari";
-    const headers = { "User-Agent": UA, "Accept": "application/json", "Accept-Language": "ar-SA,ar;q=0.9,en;q=0.8" };
-
-    // مهلة قصيرة + إعادة محاولة على نطاق بديل ليـاهو
-    const fetchWithTimeout = (url, ms = 5000) => new Promise((resolve, reject) => {
-      const ac = new AbortController();
-      const id = setTimeout(() => ac.abort(), ms);
-      fetch(url, { headers, signal: ac.signal }).then(r => {
-        clearTimeout(id); resolve(r);
-      }).catch(err => { clearTimeout(id); reject(err); });
+    const r = await fetch(url, {
+      headers: {
+        "Accept": "application/json",
+        // UA لتفادي بعض الحمايات
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
+      }
     });
 
-    const tryOnce = async (host) => {
-      const url = `https://${host}/v7/finance/quote?symbols=${joined}`;
-      const r = await fetchWithTimeout(url, 6000);
-      if (!r.ok) throw new Error(`${host} ${r.status}`);
-      const j = await r.json();
-      return j?.quoteResponse?.result || [];
-    };
-
-    let results = [];
-    try {
-      results = await tryOnce("query1.finance.yahoo.com");
-    } catch {
-      // محاولة ثانية سريعة
-      results = await tryOnce("query2.finance.yahoo.com");
+    const txt = await r.text();
+    if (!r.ok) {
+      return {
+        statusCode: 502,
+        headers: baseHeaders,
+        body: JSON.stringify({ upstreamStatus: r.status, upstreamOk: false, data: txt.slice(0,400) })
+      };
     }
 
-    // لو مافيه ولا نتيجة، نرجّع رسالة مفيدة بدل 504
-    if (!Array.isArray(results) || results.length === 0) {
-      return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ ok:false, reason:"no-data" }) };
-    }
-
-    // خرّج فقط الحقول المهمة للواجهة
-    const out = results.map(r => ({
-      symbol: r.symbol,
-      name: r.longName || r.shortName || r.symbol,
-      price: r.regularMarketPrice ?? null,
-      change: r.regularMarketChange ?? null,
-      changePercent: r.regularMarketChangePercent ?? null,
-      currency: r.currency || "SAR",
-      marketState: r.marketState || null,
-      time: r.regularMarketTime ? new Date(r.regularMarketTime * 1000).toISOString() : null
+    const j = JSON.parse(txt);
+    const rows = (j?.quoteResponse?.result || []).map(v => ({
+      symbol: v.symbol,
+      name: v.shortName || v.longName || v.displayName || v.symbol,
+      exchange: v.fullExchangeName || v.exchange,
+      price: v.regularMarketPrice ?? null,
+      change: v.regularMarketChange ?? null,
+      changePercent: v.regularMarketChangePercent ?? null,
+      currency: v.currency || null,
+      marketState: v.marketState || null,
+      time: v.regularMarketTime ? (v.regularMarketTime * 1000) : null
     }));
 
-    return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ ok:true, data: out }) };
-  } catch (e) {
-    // لا نرجّع 504 للواجهة؛ نخليها 200 برسالة، والواجهة تعرض "تعذّر الجلب"
     return {
       statusCode: 200,
-      headers: { "Content-Type":"application/json; charset=utf-8", "Access-Control-Allow-Origin":"*" },
-      body: JSON.stringify({ ok:false, error: e?.message || "stocks failed" })
+      headers: {
+        ...baseHeaders,
+        "Content-Type": "application/json; charset=utf-8",
+        // كاش على حافة نتلايفي
+        "Netlify-CDN-Cache-Control": "public, s-maxage=300, stale-while-revalidate=60",
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      },
+      body: JSON.stringify({ ok: true, count: rows.length, results: rows })
+    };
+  } catch (e) {
+    return {
+      statusCode: 500,
+      headers: baseHeaders,
+      body: JSON.stringify({ ok:false, error: e?.message || "stocks-sa failed" })
     };
   }
 };
