@@ -1,12 +1,12 @@
 // netlify/functions/stocks-sa.mjs
 export const handler = async (event) => {
   const baseHeaders = {
-    "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
-    // كاش على طبقة CDN (Netlify Edge)
-    "Netlify-CDN-Cache-Control": "public, s-maxage=180, stale-while-revalidate=60",
+    // قلّل ضغط الطلبات على ياهو + اسمح بالقديم أثناء التحديث
+    "Netlify-CDN-Cache-Control": "public, s-maxage=300, stale-while-revalidate=60",
+    "Content-Type": "application/json; charset=utf-8",
   };
 
   if (event.httpMethod === "OPTIONS") {
@@ -14,56 +14,68 @@ export const handler = async (event) => {
   }
 
   try {
-    const qs = event.queryStringParameters || {};
-    const symbols = (qs.symbols || "2222.SR,2010.SR,7010.SR,1120.SR,1180.SR,2280.SR,^TASI")
-      .split(",")
-      .map(s => s.trim())
-      .filter(Boolean)
-      .join(",");
-
-    if (!symbols) {
-      return { statusCode: 400, headers: baseHeaders, body: '{"error":"symbols required"}' };
+    const qs = new URLSearchParams(event.queryStringParameters || {});
+    const raw = (qs.get("symbols") || "").trim();
+    if (!raw) {
+      return { statusCode: 400, headers: baseHeaders, body: JSON.stringify({ error: "symbols required" }) };
     }
 
-    const url =
-      "https://query1.finance.yahoo.com/v7/finance/quote?lang=ar-SA&region=SA&symbols=" +
-      encodeURIComponent(symbols);
+    // رمّز كل رمز لوحده (خصوصًا ^TASI)
+    const symbols = raw.split(",").map(s => s.trim()).filter(Boolean);
+    const joined = symbols.map(s => encodeURIComponent(s)).join(",");
 
-    const r = await fetch(url, {
-      headers: {
-        "Accept": "application/json",
-        "User-Agent": "Mozilla/5.0 (compatible; as3aralywm/1.0; +https://as3aralywm.com)"
-      }
+    const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari";
+    const headers = { "User-Agent": UA, "Accept": "application/json", "Accept-Language": "ar-SA,ar;q=0.9,en;q=0.8" };
+
+    // مهلة قصيرة + إعادة محاولة على نطاق بديل ليـاهو
+    const fetchWithTimeout = (url, ms = 5000) => new Promise((resolve, reject) => {
+      const ac = new AbortController();
+      const id = setTimeout(() => ac.abort(), ms);
+      fetch(url, { headers, signal: ac.signal }).then(r => {
+        clearTimeout(id); resolve(r);
+      }).catch(err => { clearTimeout(id); reject(err); });
     });
 
-    const txt = await r.text();
-    if (!r.ok) {
-      return {
-        statusCode: 502,
-        headers: baseHeaders,
-        body: JSON.stringify({ error: true, upstream: r.status, body: txt.slice(0, 500) })
-      };
+    const tryOnce = async (host) => {
+      const url = `https://${host}/v7/finance/quote?symbols=${joined}`;
+      const r = await fetchWithTimeout(url, 6000);
+      if (!r.ok) throw new Error(`${host} ${r.status}`);
+      const j = await r.json();
+      return j?.quoteResponse?.result || [];
+    };
+
+    let results = [];
+    try {
+      results = await tryOnce("query1.finance.yahoo.com");
+    } catch {
+      // محاولة ثانية سريعة
+      results = await tryOnce("query2.finance.yahoo.com");
     }
 
-    const j = JSON.parse(txt);
-    const out = (j.quoteResponse?.result || []).map(x => ({
-      symbol: x.symbol,
-      name: x.shortName || x.longName || x.displayName || x.symbol,
-      price: x.regularMarketPrice,
-      change: x.regularMarketChange,
-      changePercent: x.regularMarketChangePercent,
-      marketState: x.marketState,
-      currency: x.currency,
-      exchange: x.fullExchangeName,
-      time: x.regularMarketTime ? new Date(x.regularMarketTime * 1000).toISOString() : null
+    // لو مافيه ولا نتيجة، نرجّع رسالة مفيدة بدل 504
+    if (!Array.isArray(results) || results.length === 0) {
+      return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ ok:false, reason:"no-data" }) };
+    }
+
+    // خرّج فقط الحقول المهمة للواجهة
+    const out = results.map(r => ({
+      symbol: r.symbol,
+      name: r.longName || r.shortName || r.symbol,
+      price: r.regularMarketPrice ?? null,
+      change: r.regularMarketChange ?? null,
+      changePercent: r.regularMarketChangePercent ?? null,
+      currency: r.currency || "SAR",
+      marketState: r.marketState || null,
+      time: r.regularMarketTime ? new Date(r.regularMarketTime * 1000).toISOString() : null
     }));
 
-    return { statusCode: 200, headers: baseHeaders, body: JSON.stringify(out) };
+    return { statusCode: 200, headers: baseHeaders, body: JSON.stringify({ ok:true, data: out }) };
   } catch (e) {
+    // لا نرجّع 504 للواجهة؛ نخليها 200 برسالة، والواجهة تعرض "تعذّر الجلب"
     return {
-      statusCode: 500,
-      headers: baseHeaders,
-      body: JSON.stringify({ error: true, message: e?.message || "stocks-sa failed" })
+      statusCode: 200,
+      headers: { "Content-Type":"application/json; charset=utf-8", "Access-Control-Allow-Origin":"*" },
+      body: JSON.stringify({ ok:false, error: e?.message || "stocks failed" })
     };
   }
 };
