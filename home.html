@@ -253,6 +253,15 @@
       <button id="refreshMatches" class="weather-btn">تحديث</button>
     </div>
   </div>
+
+  <!-- ستايل قائمة النتائج -->
+  <style>
+    #matches-list{list-style:none;margin:0;padding:0}
+    #matches-list li{padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+    .dark-mode #matches-list li{border-color:rgba(255,255,255,.06)}
+    .muted{font-size:12px;opacity:.75}
+  </style>
+
   <ul id="matches-list"><li>جاري التحميل…</li></ul>
   <div class="weather-meta">آخر تحديث: <span id="matches-updated">—</span></div>
 </section>
@@ -263,27 +272,51 @@
   const updated = document.getElementById('matches-updated');
   const sel = document.getElementById('matchesLeague');
 
+  // توحيد صيغ الحقول من مصادر مختلفة
+  function lineFromItem(m) {
+    if (typeof m === 'string') return m;
+
+    // أسماء الفرق
+    const home = m.home || m.homeTeam || m.team1 || m.teams?.home || m.h || m.ht || m?.fixture?.teams?.home?.name;
+    const away = m.away || m.awayTeam || m.team2 || m.teams?.away || m.a || m.at || m?.fixture?.teams?.away?.name;
+    const name = [home, away].filter(Boolean).join(' × ') || m.title || m.name || '';
+
+    // النتيجة
+    let score = '';
+    if (typeof m.score === 'string') score = m.score;
+    else if (Array.isArray(m.ft)) score = m.ft.join('-');
+    else if (m.result) score = String(m.result);
+    else if (Number.isFinite(m.goals?.home) && Number.isFinite(m.goals?.away)) {
+      score = `${m.goals.home}-${m.goals.away}`;
+    }
+
+    // البطولة
+    const comp = m.comp || m.league || m.competition || m.tournament || m?.fixture?.league?.name || '';
+
+    const main = name || (score ? `نتيجة: ${score}` : '');
+    const right = comp ? ` <span class="muted">(${comp})</span>` : '';
+    return main ? `${main}${score && name ? ' — ' + score : score ? score : ''}${right}` : '';
+  }
+
   async function loadMatches() {
     list.innerHTML = '<li>جاري التحميل…</li>';
     const q = (sel?.value || '').trim();
+
     try {
       const r = await fetch(
         '/.netlify/functions/matches?q=' + encodeURIComponent(q) + '&limit=12&fallback=1',
-        { cache: 'no-store' }
+        { cache:'no-store' }
       );
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const arr = await r.json();
+      const arr = r.ok ? await r.json() : [];
 
       list.innerHTML = '';
       if (!Array.isArray(arr) || arr.length === 0) {
         list.innerHTML = '<li>لا توجد نتائج حالياً.</li>';
       } else {
         arr.forEach(m => {
-          const name = [m.home, m.away].filter(Boolean).join(' × ');
-          const score = m.score ? ` — ${m.score}` : '';
-          const comp = m.comp ? ` <span class="muted">(${m.comp})</span>` : '';
           const li = document.createElement('li');
-          li.innerHTML = `<strong>${name}</strong>${score}${comp}`;
+          const line = lineFromItem(m);
+          li.innerHTML = line || '<span class="muted">عنصر غير معروف</span>';
           list.appendChild(li);
         });
       }
@@ -299,10 +332,10 @@
   sel?.addEventListener('change', loadMatches);
 
   loadMatches();
+  // تحديث تلقائي كل 15 دقيقة
   setInterval(loadMatches, 15 * 60 * 1000);
 })();
 </script>
-
 
 
     <!-- ✅ صندوق الترندات (مضاف فقط) -->
