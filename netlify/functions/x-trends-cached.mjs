@@ -1,33 +1,34 @@
-// netlify/functions/x-trends-cached.mjs
-export const handler = async (event) => {
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Content-Type": "application/json; charset=utf-8",
-    // ✅ كاش نتلايفي CDN ساعة + سماح دقيقة للتحديث بالخلفية
-"Netlify-CDN-Cache-Control": "public, s-maxage=1800, stale-while-revalidate=60",
-  };
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
-  }
+import { getStore } from '@netlify/blobs';
 
-  try {
-    // نستخدم دالتك الحالية x-trends كمصدر وحيد
-    const BASE = process.env.URL || process.env.DEPLOY_URL || "https://as3aralywm.com";
-    const limit = 10; // ثبّتناه لتوحيد مفتاح الكاش
-    const upstreamURL = `${BASE}/.netlify/functions/x-trends?limit=${limit}`;
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type'
+};
 
-    const r = await fetch(upstreamURL, { headers: { "Accept": "application/json" } });
-    if (!r.ok) {
-      const text = await r.text();
-      return { statusCode: 502, headers, body: JSON.stringify({ ok:false, where:"upstream", status:r.status, text }) };
+export default async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+
+  const url = new URL(req.url);
+  const country = url.searchParams.get('country') || (process.env.TRENDS_COUNTRY || 'SA');
+  const limit = Math.max(1, Math.min(50, parseInt(url.searchParams.get('limit') || '10', 10)));
+
+  const store = getStore('trends');
+  const json = await store.get(`${country}.json`, { consistency: 'strong' });
+  const data = json ? JSON.parse(json) : { country, updated_at: null, trends: [] };
+
+  const body = JSON.stringify({
+    country,
+    updated_at: data.updated_at,
+    trends: (data.trends || []).slice(0, limit)
+  });
+
+  return new Response(body, {
+    status: 200,
+    headers: {
+      ...cors,
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=1800'
     }
-
-    // نمرّر النص كما هو (مصفوفة)
-    const text = await r.text();
-    return { statusCode: 200, headers, body: text };
-  } catch (e) {
-    return { statusCode: 500, headers, body: JSON.stringify({ ok:false, where:"handler", error:String(e) }) };
-  }
+  });
 };
