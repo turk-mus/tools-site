@@ -1,18 +1,13 @@
-// netlify/functions/news.mjs
-import { XMLParser } from "fast-xml-parser";
+// netlify/functions/news.js
+const { XMLParser } = require("fast-xml-parser");
 
-// ——— المصادر (أضِف/احذف كما تريد) ———
+// —— المصادر ——
 const FEEDS = [
   { url: "https://www.okaz.com.sa/rssFeed/0", source: "عكاظ" },
   { url: "https://saudigazette.com.sa/rssFeed/74", source: "Saudi Gazette" },
 ];
 
-// ——— قوائم الأمان ———
-const SAFE_CATEGORIES = new Set([
-  "Saudi Arabia","السعودية","محليات","المحليات","اقتصاد","مال","أعمال",
-  "رياضة","تقنية","علوم","تعليم","صحة","طقس","مرور","خدمات"
-]);
-
+// —— كلمات محظورة (اخلاق/عنف/مقامرة...) ——
 const BLOCKED_WORDS = [
   // عربي
   "اباحي","اباحيه","جنس","جنسي","خادش","مخل","دعاره","تحرش","اغتصاب",
@@ -27,15 +22,15 @@ const BLOCKED_WORDS = [
   "murder","rape","kidnap","terror","terrorism","extremist","hate","hateful"
 ];
 
-// (اختياري) حصر الروابط على نطاقات المصادر فقط
+// حصر الروابط على النطاقات الموثوقة (اختياري لكنه مفيد)
 const ALLOW_DOMAIN_PARTS = [
   "okaz.com.sa",
-  "saudigazette.com.sa"
+  "saudigazette.com.sa",
 ];
 
-// ——— أدوات ———
+// —— أدوات ——
 function normalizeArabic(s = "") {
-  return s
+  return String(s)
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/[ًٌٍَُِّْـٰ]/g, "")
@@ -51,18 +46,12 @@ function containsBlocked(text = "") {
   return BLOCKED_WORDS.some((w) => n.includes(normalizeArabic(w)));
 }
 
-function hasSafeCategory(cats) {
-  if (!cats) return true; // لو ما فيه تصنيفات ما نرفضه بسببها
-  const arr = Array.isArray(cats) ? cats : [cats];
-  return arr.some((c) => SAFE_CATEGORIES.has(String(c).trim()));
-}
-
 function sameHostAllowed(link = "") {
   try {
     const u = new URL(link);
     return ALLOW_DOMAIN_PARTS.some((p) => u.hostname.endsWith(p));
   } catch {
-    return true; // لو الرابط غير صالح نتجاوزه بدل كسر الباقي
+    return true;
   }
 }
 
@@ -70,7 +59,7 @@ function stripHtml(html = "") {
   return String(html).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
   const limit = Math.min(parseInt(event.queryStringParameters?.limit || "10", 10), 30);
   const SFW = event.queryStringParameters?.sfw === "1"; // وضع آمن
 
@@ -101,7 +90,6 @@ export const handler = async (event) => {
         const rawLink  = item?.link?.href ?? item?.link ?? "";
         const rawDate  = item?.pubDate ?? item?.published ?? item?.updated ?? null;
         const rawDesc  = item?.description?.text ?? item?.description ?? item?.summary ?? item?.content ?? "";
-        const rawCats  = item?.category || item?.tags || null;
 
         const title = String(rawTitle).trim();
         const link  = String(rawLink).trim();
@@ -111,8 +99,8 @@ export const handler = async (event) => {
         if (!title || !link) continue;
 
         if (SFW) {
+          // فلترة أخلاقية + نطاقات فقط (ألغينا شرط التصنيفات لأنه كان يفلتر زيادة)
           if (containsBlocked(title) || containsBlocked(desc)) continue;
-          if (!hasSafeCategory(rawCats)) continue;
           if (!sameHostAllowed(link)) continue;
         }
 
@@ -123,10 +111,12 @@ export const handler = async (event) => {
     }
   }
 
+  // ترتيب بالأحدث
   collected.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
 
-  const seen = new Set();
+  // إزالة التكرار بالعنوان
   const unique = [];
+  const seen = new Set();
   for (const it of collected) {
     if (!seen.has(it.title)) {
       seen.add(it.title);
