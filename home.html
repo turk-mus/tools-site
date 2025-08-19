@@ -23,171 +23,171 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
 
-  <style>
-    body {
-      font-family: 'Tajawal', sans-serif;
-      background-color: #f5f5f5;
-      margin: 0;
-      padding: 0;
-      color: #333;
-      transition: background 0.3s, color 0.3s;
-    }
+<style>
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
+    color: #333;
+    transition: background 0.3s, color 0.3s;
+  }
 
-    .dark-mode {
-      background-color: #121212;
-      color: #e0e0e0;
-    }
+  .dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+  }
 
-    .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 20px;
-      text-align: center;
-    }
+  .container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+    text-align: center;
+  }
 
-    h1 {
-      color: #006c35;
-      margin-bottom: 10px;
-      font-size: 26px;
-    }
+  h1 {
+    color: #006c35;
+    margin-bottom: 10px;
+    font-size: 26px;
+  }
 
-    .dark-mode h1 {
-      color: #6ef19d;
-    }
+  .dark-mode h1 {
+    color: #6ef19d;
+  }
 
-    p.description {
-      font-size: 18px;
-      color: #555;
-      margin-bottom: 30px;
-      line-height: 1.8;
-    }
+  p.description {
+    font-size: 18px;
+    color: #555;
+    margin-bottom: 30px;
+    line-height: 1.8;
+  }
 
-    .dark-mode p.description {
-      color: #bbb;
-    }
+  .dark-mode p.description {
+    color: #bbb;
+  }
 
-    .top-bar {
-      text-align: left;
-      padding: 10px 20px;
-    }
+  .top-bar {
+    text-align: left;
+    padding: 10px 20px;
+  }
 
-    .toggle-btn {
-      background: #006c35;
-      color: white;
-      border: none;
-      border-radius: 20px;
-      padding: 8px 15px;
-      cursor: pointer;
-      font-size: 14px;
-    }
+  .toggle-btn {
+    background: #006c35;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 14px;
+  }
 
-    .info-boxes {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 30px;
-    }
+  .info-boxes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
 
-    .info-box {
-      flex: 1 1 300px;
-      background-color: #ffffff;
-      border: 2px solid #eeeeee;
-      border-radius: 10px;
-      padding: 15px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-      text-align: right;
-    }
+  .info-box {
+    flex: 1 1 300px;
+    background-color: #ffffff;
+    border: 2px solid #eeeeee;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    text-align: right;
+  }
 
-    .dark-mode .info-box {
-      background-color: #1e1e1e;
-      border-color: #444;
-    }
+  .dark-mode .info-box {
+    background-color: #1e1e1e;
+    border-color: #444;
+  }
 
-    .info-box h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      color: #006c35;
-    }
+  .info-box h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #006c35;
+  }
 
-    .dark-mode .info-box h3 {
-      color: #6ef19d;
-    }
+  .dark-mode .info-box h3 {
+    color: #6ef19d;
+  }
 
-    .info-box ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
+  .info-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
 
-    .info-box li {
-      padding: 5px 0;
-      border-bottom: 1px solid #eee;
-      font-size: 15px;
-    }
+  .info-box li {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 15px;
+  }
 
-    .dark-mode .info-box li {
-      border-color: #444;
-    }
+  .dark-mode .info-box li {
+    border-color: #444;
+  }
 
-    .buttons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-    }
+  /* ===== الأزرار ===== */
+  /* شبكي: زران في كل صف */
+  .buttons{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
 
-    .btn {
-      flex: 1 1 250px;
-      background-color: #fff;
-      border: 2px solid #006c35;
-      border-radius: 10px;
-      text-decoration: none;
-      color: #006c35;
-      font-size: 18px;
-      padding: 15px 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      transition: all 0.3s ease;
-    }
+  .btn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 52px;
+    padding: 15px 20px;
+    background-color: #fff;
+    border: 2px solid #006c35;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #006c35;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
 
-    .btn:hover {
-      background-color: #006c35;
-      color: #fff;
-      cursor: pointer;
-    }
+  .btn:hover {
+    background-color: #006c35;
+    color: #fff;
+  }
 
-    .dark-mode .btn {
-      background-color: #1e1e1e;
-      color: #6ef19d;
-      border-color: #6ef19d;
-    }
+  .dark-mode .btn {
+    background-color: #1e1e1e;
+    color: #6ef19d;
+    border-color: #6ef19d;
+  }
 
-    .dark-mode .btn:hover {
-      background-color: #6ef19d;
-      color: #000;
-    }
+  .dark-mode .btn:hover {
+    background-color: #6ef19d;
+    color: #000;
+  }
 
-    @media (max-width: 600px) {
-      .btn {
-        flex: 1 1 100%;
-      }
-    }
+  /* === Hashtags card ONLY (جديد) === */
+  .hashtags-card .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+  .dark-mode .hashtags-card .row{border-bottom:1px solid rgba(255,255,255,.06)}
+  .hashtags-list{list-style:none;margin:0;padding:0}
+  .hashtags-list li{padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+  .dark-mode .hashtags-list li{border-bottom:1px solid rgba(255,255,255,.06)}
+  .hash-link{color:#006c35;text-decoration:none;font-weight:700}
+  .hash-link:hover{text-decoration:underline}
+  .dark-mode .hash-link{color:#6ef19d}
+  .muted{font-size:12px;opacity:.75}
 
-    /* === Hashtags card ONLY (جديد) === */
-    .hashtags-card .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}
-    .dark-mode .hashtags-card .row{border-bottom:1px solid rgba(255,255,255,.06)}
-    .hashtags-list{list-style:none;margin:0;padding:0}
-    .hashtags-list li{padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06)}
-    .dark-mode .hashtags-list li{border-bottom:1px solid rgba(255,255,255,.06)}
-    .hash-link{color:#006c35;text-decoration:none;font-weight:700}
-    .hash-link:hover{text-decoration:underline}
-    .dark-mode .hash-link{color:#6ef19d}
-    .muted{font-size:12px;opacity:.75}
+  /* بطاقات عامة (تُستخدم للأقسام مثل الطقس/الأخبار/هاشتاقات) */
+  .card{border-radius:18px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px; margin-bottom:22px;}
+  .dark-mode .card{background:#1c1c1c}
+</style>
 
-    /* shared card style already defined below for weather; reuse */
-    .card{border-radius:18px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px; margin-bottom:22px;}
-    .dark-mode .card{background:#1c1c1c}
-  </style>
 </head>
 <body>
   <div class="top-bar">
@@ -197,8 +197,9 @@
   <div class="container">
     <h1>📌 مرحبًا بك في موقع أسعار اليوم السعودية</h1>
     <p class="description">
-      هنا ستجد أحدث أسعار <strong>الذهب</strong> و<strong>الوقود</strong> في السعودية، إضافة إلى أدوات مالية مفيدة مثل <strong>حاسبة الزكاة</strong> و<strong>حاسبة العمر</strong> و<strong>تحويل التاريخ</strong>. تم تصميم الموقع ليكون مرجعًا سهل الاستخدام ومفيدًا لكل من يهتم بالشؤون المالية اليومية في المملكة.
-    </p>
+  أحدث أسعار <strong>الذهب</strong> و<strong>الوقود</strong> في السعودية، مع تحديثات سريعة لـ<strong>الأخبار</strong> و<strong>الطقس</strong> و<strong>ترندات المملكة</strong> و<strong>نتائج المباريات</strong>. نوفر أيضًا أدوات مفيدة مثل <strong>حاسبة الزكاة</strong> و<strong>حاسبة العمر</strong> و<strong>تحويل التاريخ</strong> و<strong>ضريبة القيمة المضافة</strong> و<strong>حاسبة التقاعد</strong>.
+</p>
+
 
     <!-- ✅ صندوق أسعار الذهب والديناميكية -->
     <div class="info-boxes">
