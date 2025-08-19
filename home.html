@@ -762,38 +762,6 @@
     </div>
   </div>
 
-  <script>
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark-mode');
-    }
-
-    async function fetchGoldPrices() {
-      try {
-        const response = await fetch("gold.json");
-        const data = await response.json();
-
-        const pricePerOunceUsd = data.price_ounce_usd;
-        const usdToSar = 3.75;
-        const pricePerGramSar = (pricePerOunceUsd / 31.1035) * usdToSar;
-
-        const gram24 = (pricePerGramSar * 1).toFixed(2);
-        const gram21 = (pricePerGramSar * (21 / 24)).toFixed(2);
-        const gram18 = (pricePerGramSar * (18 / 24)).toFixed(2);
-
-        document.getElementById('gold-prices').innerHTML = `
-          <li>عيار 24: ${gram24} ريال</li>
-          <li>عيار 21: ${gram21} ريال</li>
-          <li>عيار 18: ${gram18} ريال</li>
-        `;
-      } catch (err) {
-        document.getElementById('gold-prices').innerHTML = `<li>تعذر تحميل الأسعار</li>`;
-      }
-    }
-
-    fetchGoldPrices();
-  </script>
-
-  <!-- سكربت تحميل الهاشتاقات (جديد) -->
 <script>
 async function loadTrends() {
   const list = document.getElementById("trends-list");
@@ -807,9 +775,9 @@ async function loadTrends() {
     const r = await fetch('/.netlify/functions/x-trends-cached?country=SA&limit=10', { cache: 'no-store' });
     if (!r.ok) throw new Error("HTTP " + r.status);
 
-    const data = await r.json();                          // ← صار كائن
+    const data = await r.json();               // استجابة الكاش: { country, updated_at, trends: [...] }
     const arr  = Array.isArray(data) ? data : (data.trends || []);
-    const updatedAt = data.updated_at ? new Date(data.updated_at) : new Date();
+    const updatedAt = data.updated_at ? new Date(data.updated_at) : null;
 
     list.innerHTML = "";
     if (!arr.length) { list.innerHTML = "<li>لا توجد نتائج حالياً.</li>"; return; }
@@ -820,7 +788,8 @@ async function loadTrends() {
       const label = raw.startsWith("#") ? raw : `#${raw}`;
 
       const a = document.createElement("a");
-      a.href = "https://x.com/search?q=" + encodeURIComponent(label);
+      // لو API رجع url كامل سنستخدمه، وإلا نفتح بحث X
+      a.href = (t.url && /^https?:\/\//i.test(t.url)) ? t.url : "https://x.com/search?q=" + encodeURIComponent(label);
       a.target = "_blank";
       a.rel = "noopener noreferrer";
       a.className = "hash-link";
@@ -839,19 +808,21 @@ async function loadTrends() {
       list.appendChild(li);
     });
 
-    foot.textContent = "آخر تحديث: " + updatedAt.toLocaleString("ar-SA");
+    foot.textContent = updatedAt ? ("آخر تحديث: " + updatedAt.toLocaleString("ar-SA")) : "";
   } catch (e) {
     console.error(e);
     list.innerHTML = "<li>تعذّر جلب الترند الآن.</li>";
     foot.textContent = "تفاصيل: " + (e?.message || "غير معروف");
   }
 }
+
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("refreshTrends")?.addEventListener("click", loadTrends);
   loadTrends();
   setInterval(loadTrends, 30 * 60 * 1000); // تحديث واجهة فقط
 });
 </script>
+
 
 
 <script>
