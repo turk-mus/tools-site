@@ -235,6 +235,23 @@
   <div class="weather-meta">آخر تحديث: <span id="crypto-updated">—</span></div>
 </div>
 
+<!-- مربع الأخبار في الرئيسية -->
+<section class="card" id="news-card" dir="rtl" lang="ar" style="margin-top:22px;">
+  <div class="weather-header" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="weather-title">الأخبار</div>
+    <button class="weather-btn" style="cursor:pointer" onclick="location.href='news.html'">المزيد</button>
+  </div>
+
+  <ul id="news-list" class="news-list" style="list-style:none;padding:0;margin:6px 0 0 0;display:flex;flex-direction:column;gap:10px;">
+    <li>جاري التحميل…</li>
+  </ul>
+
+  <div class="updated" style="margin-top:8px;font-size:12px;color:#777">
+    آخر تحديث: <span id="news-updated">—</span>
+  </div>
+</section>
+
+
 <!-- نتائج المباريات (مربع صغير + المزيد) -->
 <section class="card" id="matches-mini" dir="rtl" lang="ar" style="margin-top:22px;">
   <div class="weather-header" style="gap:8px;align-items:center">
@@ -913,6 +930,46 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 </script>
 
+<script>
+async function loadNewsBox() {
+  try {
+    const res = await fetch('/.netlify/functions/news?limit=4&sfw=1', { cache: 'no-store' });
+    if (!res.ok) throw new Error('news http ' + res.status);
+    const data = await res.json();
+
+    const list = document.getElementById('news-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    (data.items || []).forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'news-item';
+      li.style.borderBottom = '1px solid #eee';
+      li.style.paddingBottom = '8px';
+
+      const time = item.pubDate ? new Date(item.pubDate).toLocaleString('ar-SA', { hour12: false }) : '';
+      li.innerHTML = `
+        <a href="${item.link}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
+          <div class="news-title" style="font-weight:600;line-height:1.4">${item.title}</div>
+          <div class="news-meta" style="font-size:12px;color:#666">${item.source}${time ? ' • ' + time : ''}</div>
+        </a>
+      `;
+      list.appendChild(li);
+    });
+
+    const updatedEl = document.getElementById('news-updated');
+    if (updatedEl && data.updatedAt) {
+      updatedEl.textContent = new Date(data.updatedAt).toLocaleString('ar-SA', { hour12: false });
+    }
+  } catch (e) {
+    console.error('news error', e);
+    const list = document.getElementById('news-list');
+    if (list) list.innerHTML = '<li>تعذّر تحميل الأخبار الآن.</li>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadNewsBox);
+</script>
 
 
 
