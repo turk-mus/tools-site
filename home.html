@@ -33,6 +33,9 @@
     transition: background 0.3s, color 0.3s;
   }
 
+  /* يمنع تجاوز العرض داخل الشبكة */
+  *, *::before, *::after { box-sizing: border-box; }
+
   .dark-mode {
     background-color: #121212;
     color: #e0e0e0;
@@ -51,9 +54,7 @@
     font-size: 26px;
   }
 
-  .dark-mode h1 {
-    color: #6ef19d;
-  }
+  .dark-mode h1 { color: #6ef19d; }
 
   p.description {
     font-size: 18px;
@@ -62,14 +63,9 @@
     line-height: 1.8;
   }
 
-  .dark-mode p.description {
-    color: #bbb;
-  }
+  .dark-mode p.description { color: #bbb; }
 
-  .top-bar {
-    text-align: left;
-    padding: 10px 20px;
-  }
+  .top-bar { text-align: left; padding: 10px 20px; }
 
   .toggle-btn {
     background: #006c35;
@@ -99,43 +95,21 @@
     text-align: right;
   }
 
-  .dark-mode .info-box {
-    background-color: #1e1e1e;
-    border-color: #444;
-  }
+  .dark-mode .info-box { background-color: #1e1e1e; border-color: #444; }
 
-  .info-box h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: #006c35;
-  }
+  .info-box h3 { margin: 0 0 10px; color: #006c35; }
+  .dark-mode .info-box h3 { color: #6ef19d; }
 
-  .dark-mode .info-box h3 {
-    color: #6ef19d;
-  }
+  .info-box ul { list-style: none; padding: 0; margin: 0; }
+  .info-box li { padding: 5px 0; border-bottom: 1px solid #eee; font-size: 15px; }
+  .dark-mode .info-box li { border-color: #444; }
 
-  .info-box ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .info-box li {
-    padding: 5px 0;
-    border-bottom: 1px solid #eee;
-    font-size: 15px;
-  }
-
-  .dark-mode .info-box li {
-    border-color: #444;
-  }
-
-  /* ===== الأزرار ===== */
-  /* شبكي: زران في كل صف */
+  /* ===== الأزرار (زرّين بكل صف) ===== */
   .buttons{
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    column-gap: 10px;
+    row-gap: 10px;
   }
 
   .btn{
@@ -143,36 +117,33 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 52px;
-    padding: 15px 20px;
+    min-height: 44px;         /* أصغر من السابق لتقليل الارتفاع */
+    padding: 10px 12px;       /* تقليل الحشوة */
+    line-height: 1.2;
     background-color: #fff;
-    border: 2px solid #006c35;
+    border: 1.5px solid #006c35; /* أنحف */
     border-radius: 10px;
     text-decoration: none;
     color: #006c35;
-    font-size: 18px;
+    font-size: 16px;          /* أصغر قليلاً */
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     cursor: pointer;
+    white-space: nowrap;      /* يمنع نزول السطر */
+    overflow: hidden;         /* يخفي الزيادة */
+    text-overflow: ellipsis;  /* نقاط عند طول النص */
   }
 
-  .btn:hover {
-    background-color: #006c35;
-    color: #fff;
-  }
+  .btn:hover { background-color: #006c35; color: #fff; }
 
   .dark-mode .btn {
     background-color: #1e1e1e;
     color: #6ef19d;
     border-color: #6ef19d;
   }
+  .dark-mode .btn:hover { background-color: #6ef19d; color: #000; }
 
-  .dark-mode .btn:hover {
-    background-color: #6ef19d;
-    color: #000;
-  }
-
-  /* === Hashtags card ONLY (جديد) === */
+  /* === Hashtags card ONLY === */
   .hashtags-card .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}
   .dark-mode .hashtags-card .row{border-bottom:1px solid rgba(255,255,255,.06)}
   .hashtags-list{list-style:none;margin:0;padding:0}
@@ -183,10 +154,11 @@
   .dark-mode .hash-link{color:#6ef19d}
   .muted{font-size:12px;opacity:.75}
 
-  /* بطاقات عامة (تُستخدم للأقسام مثل الطقس/الأخبار/هاشتاقات) */
+  /* بطاقات عامة (طقس/أخبار/هاشتاقات...) */
   .card{border-radius:18px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px; margin-bottom:22px;}
   .dark-mode .card{background:#1c1c1c}
 </style>
+
 
 </head>
 <body>
