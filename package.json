@@ -3,7 +3,8 @@
     "@netlify/blobs": "^10.0.8",
     "csv-parse": "5.6.0",
     "fast-xml-parser": "4.5.3",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "node-ical": "0.16.1"
   },
   "name": "tools-site",
   "version": "1.0.0",

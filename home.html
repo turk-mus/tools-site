@@ -563,6 +563,70 @@
     })();
     </script>
 
+<section class="card" id="holidays-card" dir="rtl" lang="ar" style="margin-top:22px;">
+  <div class="weather-header" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="weather-title">أقرب إجازة دراسية</div>
+    <button class="weather-btn" style="cursor:pointer" onclick="location.href='holidays.html'">المزيد</button>
+  </div>
+
+  <div id="next-holiday" style="margin-top:8px">جاري التحميل…</div>
+
+  <div class="updated" style="margin-top:8px;font-size:12px;color:#777">
+    آخر تحديث: <span id="hol-updated">—</span>
+  </div>
+</section>
+<!-- ملف البيانات -->
+<script src="/assets/holidays-data.js"></script>
+
+<script>
+  function fmtRange(s,e){
+    const opt = { year:'numeric', month:'2-digit', day:'2-digit' };
+    const a = new Date(s), b = new Date(e);
+    const g = d => d.toLocaleDateString('ar-SA', opt);
+    return (g(a) === g(b)) ? g(a) : (g(a) + ' — ' + g(b));
+  }
+  function leftDays(s){
+    const ms = 86400000;
+    const t = new Date(); t.setHours(0,0,0,0);
+    const d = new Date(s); d.setHours(0,0,0,0);
+    return Math.ceil((d - t) / ms);
+  }
+  function getUpcoming(list){
+    const today = new Date(); today.setHours(0,0,0,0);
+    return (list||[])
+      .filter(h => new Date(h.end || h.start) >= today)
+      .sort((a,b) => new Date(a.start) - new Date(b.start));
+  }
+
+  function renderNextHoliday(){
+    try{
+      const data = window.HOLIDAYS || [];
+      const upcoming = getUpcoming(data);
+      const box = document.getElementById('next-holiday');
+      const upd = document.getElementById('hol-updated');
+
+      if (upd && window.HOLIDAYS_UPDATED_AT) {
+        upd.textContent = new Date(window.HOLIDAYS_UPDATED_AT).toLocaleString('ar-SA', { hour12:false });
+      }
+
+      if (!upcoming.length){ box.textContent = 'لا توجد إجازات قريبة.'; return; }
+
+      const h = upcoming[0];
+      const days = leftDays(h.start);
+      const note = days > 0 ? `تبقّى ${days} يوم` : (days === 0 ? 'اليوم' : '');
+      box.innerHTML = `
+        <div style="font-weight:700;line-height:1.4">${h.title}</div>
+        <div style="font-size:12px;color:#666">${fmtRange(h.start, h.end)}${note ? ' • ' + note : ''}</div>
+      `;
+    }catch(e){
+      console.error(e);
+      document.getElementById('next-holiday').textContent = 'تعذّر تحميل الإجازات.';
+    }
+  }
+  document.addEventListener('DOMContentLoaded', renderNextHoliday);
+</script>
+
+
     <!-- ====== Weather Card (no API key) ====== -->
     <style>
       .weather-card{display:flex;flex-direction:column;gap:10px}
