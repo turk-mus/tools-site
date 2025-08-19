@@ -1,101 +1,96 @@
-// يجلب الترندات كل 30 دقيقة ويخزنها في Netlify Blobs
-// يدعم: X_TRENDS_URL (+Bearer GET) أو RapidAPI twitter-trends5 (POST /twitter/request.php)
+// يجلب الترندات ويكتبها في Netlify Blobs مع "ميزانية شهرية" + حد أدنى للفاصل الزمني
 import { getStore } from '@netlify/blobs';
 
-function isClean(text = '') {
-  const bad = ['porn','sex','xxx','nsfw','fuck','shit','rape',
-    'قذف','اباح','جنس','سكس','شاذ','زب','كس','طيز','لعن'];
-  const s = (text||'').toLowerCase();
+const COUNTRY = (process.env.TRENDS_COUNTRY || 'SA').trim();
+const WOEID   = (process.env.TRENDS_WOEID   || '23424938').trim(); // السعودية
+const LANG    = (process.env.TRENDS_LANG    || 'ar').trim();
+
+// ميزانية شهرية + أقل فاصل بين تحديثين
+const MONTHLY_LIMIT   = parseInt(process.env.TRENDS_MONTHLY_LIMIT || '100', 10);
+const MIN_INTERVAL_HR = parseInt(process.env.TRENDS_MIN_INTERVAL_HOURS || '8', 10);
+
+function isClean(text='') {
+  const bad = ['porn','sex','xxx','nsfw','fuck','shit','rape','قذف','اباح','جنس','سكس','شاذ','زب','كس','طيز','لعن'];
+  const s = text.toLowerCase();
   return !bad.some(w => s.includes(w));
 }
 
-const DEFAULT_WOEID = process.env.TRENDS_WOEID || '23424938'; // KSA
-const DEFAULT_COUNTRY = (process.env.TRENDS_COUNTRY || 'SA').trim();
-const DEFAULT_LANG = process.env.TRENDS_LANG || 'ar';
+function tpl(str='', vars){ return str.replace(/\{(\w+)\}/g,(_,k)=> (vars[k] ?? '')); }
 
-function buildHeaders() {
-  const h = { Accept: 'application/json' };
+function buildHeaders(){
+  const h = { Accept:'application/json' };
   if (process.env.X_TRENDS_API_KEY) h.Authorization = `Bearer ${process.env.X_TRENDS_API_KEY}`;
-  if (process.env.RAPIDAPI_KEY && process.env.TRENDS_HOST) {
-    h['X-RapidAPI-Key'] = process.env.RAPIDAPI_KEY;
+  if (process.env.RAPIDAPI_KEY && process.env.TRENDS_HOST){
+    h['X-RapidAPI-Key']  = process.env.RAPIDAPI_KEY;
     h['X-RapidAPI-Host'] = process.env.TRENDS_HOST;
   }
   return h;
 }
 
-async function fetchFromDirect(country) {
-  if (!process.env.X_TRENDS_URL) return null;
-  const url = `${process.env.X_TRENDS_URL}${encodeURIComponent(country)}`;
-  const res = await fetch(url, { headers: buildHeaders() });
-  if (!res.ok) throw new Error('Upstream error '+res.status);
-  return res.json();
-}
+// مزوّد عام (مباشر أو RapidAPI)
+async function fetchUpstream(){
+  const vars = { country: COUNTRY.toLowerCase(), COUNTRY, woeid: WOEID, lang: LANG };
 
-async function fetchFromRapidAPI(country) {
-  if (!process.env.TRENDS_HOST || !process.env.RAPIDAPI_KEY) return null;
+  // مزوّد مباشر عبر X_TRENDS_URL
+  if (process.env.X_TRENDS_URL){
+    const method = (process.env.TRENDS_METHOD || 'GET').toUpperCase();
+    let url  = process.env.X_TRENDS_URL;
+    let init = { method, headers: buildHeaders() };
 
-  // السماح بتعديل المسار من المتغيرات، وإلا استخدم مسار twitter-trends5 الافتراضي
-  const path = process.env.TRENDS_PATH || '/twitter/request.php';
-  const url = `https://${process.env.TRENDS_HOST}${path}`;
+    const qs = process.env.TRENDS_QS || 'country={country}';
+    if (method === 'GET'){
+      url += (url.includes('?') ? '&' : '?') + tpl(qs, vars);
+    } else {
+      const bodyType = (process.env.TRENDS_BODY_TYPE || 'form').toLowerCase(); // form|json
+      const bodyTpl  = process.env.TRENDS_BODY || 'woeid={woeid}&country={country}&lang={lang}';
+      const bodyStr  = tpl(bodyTpl, vars);
+      if (bodyType === 'json'){
+        init.headers['Content-Type'] = 'application/json';
+        init.body = JSON.stringify(Object.fromEntries(new URLSearchParams(bodyStr)));
+      } else {
+        init.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+        init.body = new URLSearchParams(bodyStr);
+      }
+    }
+    const r = await fetch(url, init);
+    if (!r.ok) throw new Error(`Direct provider error ${r.status}`);
+    return r.json();
+  }
 
-  const isTwitterReq = path.includes('/twitter/request.php');
-  const method = isTwitterReq ? 'POST' : 'GET';
+  // RapidAPI
+  if (!process.env.TRENDS_HOST) throw new Error('Missing provider: set X_TRENDS_URL or RAPIDAPI_KEY + TRENDS_HOST');
 
-  const headers = buildHeaders();
-  let body, finalUrl = url;
+  const path   = process.env.TRENDS_PATH || '/twitter/request.php';
+  const method = (process.env.TRENDS_METHOD || (path.includes('request.php') ? 'POST' : 'GET')).toUpperCase();
 
-  if (method === 'POST') {
-    headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    const form = new URLSearchParams({
-      woeid: DEFAULT_WOEID,
-      country: country.toLowerCase(),
-      lang: DEFAULT_LANG
-    });
-    body = form;
+  let url  = `https://${process.env.TRENDS_HOST}${path}`;
+  let init = { method, headers: buildHeaders() };
+
+  if (method === 'GET'){
+    const qs = tpl(process.env.TRENDS_QS || 'country={country}', vars);
+    url += (url.includes('?') ? '&' : '?') + qs;
   } else {
-    const qs = new URLSearchParams({ country });
-    finalUrl = url + (url.includes('?') ? '&' : '?') + qs.toString();
+    const bodyType = (process.env.TRENDS_BODY_TYPE || 'form').toLowerCase(); // form|json
+    const bodyTpl  = process.env.TRENDS_BODY || 'woeid={woeid}&country={country}&lang={lang}';
+    const bodyStr  = tpl(bodyTpl, vars);
+    if (bodyType === 'json'){
+      init.headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify(Object.fromEntries(new URLSearchParams(bodyStr)));
+    } else {
+      init.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+      init.body = new URLSearchParams(bodyStr);
+    }
   }
 
-  const res = await fetch(finalUrl, { method, headers, body });
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error('RapidAPI error '+res.status+' '+txt);
-  }
-
-  const text = await res.text();
+  const r = await fetch(url, init);
+  const text = await r.text();
+  if (!r.ok) throw new Error(`RapidAPI error ${r.status} ${text.slice(0,200)}`);
   try { return JSON.parse(text); } catch { return {}; }
 }
 
-export default async () => {
-  const country = DEFAULT_COUNTRY;
-  const store = getStore('trends');
-  const key = `${country}.json`;
-
-  // حماية من التكرار: تجاهل التنفيذ لو آخر تحديث كان قبل <27 دقيقة
-  const existing = await store.get(key);
-  if (existing) {
-    try {
-      const { updated_at } = JSON.parse(existing);
-      if (updated_at && (Date.now() - new Date(updated_at).getTime()) < 27*60*1000) {
-        return new Response(null, { status: 204 });
-      }
-    } catch {}
-  }
-
-  // 1) مزوّد مباشر إن وُجد
-  let raw = null;
-  if (process.env.X_TRENDS_URL) {
-    raw = await fetchFromDirect(country);
-  } else {
-    // 2) RapidAPI twitter-trends5
-    raw = await fetchFromRapidAPI(country);
-  }
-  if (!raw) return new Response(null, { status: 204 });
-
-  // تطبيع
-  const arr = Array.isArray(raw) ? raw : (raw.trends || raw.data || raw.result || []);
-  const trends = (arr || [])
+function normalize(raw){
+  const arr = Array.isArray(raw) ? raw : (raw.trends || raw.data || raw.result || raw.items || []);
+  return (arr || [])
     .map(t => {
       const name = t.name || t.title || t.hashtag || t.topic || t.query || '';
       const tag  = name?.startsWith('#') ? name : (name ? `#${name}` : '');
@@ -106,9 +101,51 @@ export default async () => {
     .filter(t => t.name && t.name.startsWith('#'))
     .filter(t => isClean(t.name))
     .slice(0, 50);
+}
 
-  const payload = { country, updated_at: new Date().toISOString(), trends };
-  await store.setJSON(key, payload, { metadata: { updated_at: payload.updated_at } });
+export default async () => {
+  const store = getStore('trends');
+  const dataKey   = `${COUNTRY}.json`;
+  const budgetKey = `_budget.json`;
+
+  // اقرأ آخر تحديث
+  const existing = await store.get(dataKey);
+  let lastUpdated = 0;
+  if (existing){
+    try { lastUpdated = Date.parse(JSON.parse(existing).updated_at) || 0; } catch {}
+  }
+
+  // احترم أقل فاصل زمني
+  if (Date.now() - lastUpdated < MIN_INTERVAL_HR * 60 * 60 * 1000){
+    return new Response(null, { status: 204 });
+  }
+
+  // احسب ميزانية الشهر
+  const nowMonth = new Date().toISOString().slice(0,7); // YYYY-MM
+  let budget = { month: nowMonth, count: 0 };
+  const budgetRaw = await store.get(budgetKey);
+  if (budgetRaw){
+    try {
+      const parsed = JSON.parse(budgetRaw);
+      budget = (parsed.month === nowMonth) ? parsed : { month: nowMonth, count: 0 };
+    } catch {}
+  }
+
+  if (budget.count >= MONTHLY_LIMIT){
+    // تعدّي الميزانية → لا نحدّث (نستمر بعرض الكاش القديم)
+    return new Response(null, { status: 204 });
+  }
+
+  // جلب من المزود
+  const raw = await fetchUpstream();
+  const trends = normalize(raw);
+
+  // اكتب البيانات
+  const payload = { country: COUNTRY, updated_at: new Date().toISOString(), trends };
+  await store.setJSON(dataKey, payload, { metadata: { updated_at: payload.updated_at } });
+
+  // حدّث العداد
+  await store.setJSON(budgetKey, { month: nowMonth, count: budget.count + 1 }, {});
 
   return new Response(null, { status: 204 });
 };
