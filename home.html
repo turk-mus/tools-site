@@ -224,240 +224,78 @@
   </div>
 </section>
 
-
-<!-- نتائج المباريات (مربع صغير + المزيد) -->
-<section class="card" id="matches-mini" dir="rtl" lang="ar" style="margin-top:22px;">
-  <div class="weather-header" style="gap:8px;align-items:center">
-    <div class="weather-title">نتائج المباريات</div>
-    <div style="display:flex;gap:8px;margin-inline-start:auto">
-      <select id="matchesLeague" class="weather-btn" style="background:#fff;color:#006c35;border:1px solid #006c35">
-        <option value="">ملخصات عالمية</option>
-        <option value="saudi" selected>الدوري السعودي</option>
-        <option value="premier">الدوري الإنجليزي</option>
-        <option value="la liga">الدوري الإسباني</option>
-        <option value="serie a">الدوري الإيطالي</option>
-        <option value="bundesliga">الدوري الألماني</option>
-        <option value="ligue 1">الدوري الفرنسي</option>
-        <option value="champions">دوري الأبطال</option>
+<section class="card" id="saudi-leagues-card" dir="rtl" lang="ar" style="margin-top:22px">
+  <div class="weather-header" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="weather-title">نتائج الدوريات السعودية</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="saLeague" class="weather-btn" style="background:#fff;color:#006c35;border:1px solid #006c35">
+        <option value="pro" selected>دوري روشن</option>
+        <!-- <option value="4627">دوري يلو</option>  أضف IDs صحيحة إذا رغبت -->
       </select>
-      <button id="matchesRefresh" class="weather-btn">تحديث</button>
-      <button id="matchesMore" class="weather-btn">المزيد</button>
+      <button class="weather-btn" style="cursor:pointer" onclick="location.href='matches.html'">المزيد</button>
     </div>
   </div>
 
-  <style>
-    /* مربّع صغير لمباراتين */
-    #matches-mini-list{list-style:none;margin:0;padding:0}
-    .mini-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06)}
-    .mini-row:last-child{border-bottom:none}
-    .dark-mode .mini-row{border-color:rgba(255,255,255,.08)}
-    .team{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
-    .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
-    .score{min-width:64px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700}
-    .meta{font-size:12px;opacity:.8;margin-top:2px}
-    .club{display:flex;flex-direction:column;gap:2px;min-width:0}
-    .logo-wrap{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;background:#f3f3f3;overflow:hidden}
-    .dark-mode .logo-wrap{background:#2a2a2a}
-    .logo{width:100%;height:100%;object-fit:cover}
-    .logo-fallback{font-size:16px;line-height:1}
-  </style>
-
-  <ul id="matches-mini-list">
-    <li class="mini-row"><div class="name">جاري التحميل…</div></li>
-  </ul>
-  <div class="weather-meta">آخر تحديث: <span id="matches-mini-updated">—</span></div>
+  <div id="saudi-matches" style="margin-top:8px">جاري التحميل…</div>
+  <div class="updated" style="margin-top:8px;font-size:12px;color:#777">
+    آخر تحديث: <span id="sa-updated">—</span>
+  </div>
 </section>
 
 <script>
-(() => {
-  const listEl   = document.getElementById('matches-mini-list');
-  const updEl    = document.getElementById('matches-mini-updated');
-  const sel      = document.getElementById('matchesLeague');
-  const btnMore  = document.getElementById('matchesMore');
-  const btnRef   = document.getElementById('matchesRefresh');
+(async function(){
+  const $list = document.getElementById('saudi-matches');
+  const $upd  = document.getElementById('sa-updated');
+  const $sel  = document.getElementById('saLeague');
 
-  let expanded = false; // false => مباراتين، true => الكل (حتى 12)
+  async function load(leagueValue){
+    $list.textContent = 'جاري التحميل…';
 
-  const Q_MAP = {
-    '': '',
-    'saudi':'Saudi Pro League',
-    'premier':'Premier League',
-    'la liga':'La Liga',
-    'serie a':'Serie A',
-    'bundesliga':'Bundesliga',
-    'ligue 1':'Ligue 1',
-    'champions':'UEFA Champions League',
-  };
+    // دعم تمرير إما alias (pro) أو league_id رقمي
+    const isNum = /^\d+$/.test(leagueValue);
+    const qs = isNum ? `league_id=${leagueValue}` : `league=${leagueValue}`;
 
-  const AR_MAP = {
-    'Saudi Pro League':'الدوري السعودي',
-    'Premier League':'الدوري الإنجليزي',
-    'LaLiga':'الدوري الإسباني',
-    'La Liga':'الدوري الإسباني',
-    'Serie A':'الدوري الإيطالي',
-    'Bundesliga':'الدوري الألماني',
-    'Ligue 1':'الدوري الفرنسي',
-    'UEFA Champions League':'دوري أبطال أوروبا',
-    'AFC Champions League':'دوري أبطال آسيا',
-    'Al Hilal':'الهلال','Al Nassr':'النصر','Al Ittihad':'الاتحاد','Al Ahli':'الأهلي','Al Shabab':'الشباب',
-    'Al Raed':'الرائد','Al Taawoun':'التعاون','Al Ettifaq':'الاتفاق','Al Fateh':'الفتح','Abha':'أبها',
-    'Damac':'ضمك','Al Fayha':'الفيحاء','Al Riyadh':'الرياض','Al Okhdood':'الأخدود','Al Khaleej':'الخليج',
-    'Al Hazem':'الحزم','Al Tai':'الطائي',
-    'Manchester City':'مانشستر سيتي','Manchester United':'مانشستر يونايتد','Liverpool':'ليفربول','Arsenal':'أرسنال','Chelsea':'تشيلسي',
-    'Barcelona':'برشلونة','Real Madrid':'ريال مدريد','Atletico Madrid':'أتلتيكو مدريد','Inter':'إنتر','AC Milan':'ميلان','Juventus':'يوفنتوس',
-    'Bayern Munich':'بايرن ميونخ','Paris Saint-Germain':'باريس سان جيرمان'
-  };
-  const reEscape = s => s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-  function ar(s){
-    if(!s) return s;
-    let out = s;
-    for(const [en,arName] of Object.entries(AR_MAP)){
-      const re = new RegExp('\\b'+reEscape(en)+'\\b','gi');
-      out = out.replace(re, arName);
+    try {
+      const res = await fetch(`/.netlify/functions/saudi-matches?${qs}&limit=2&type=both`, { cache: "no-store" });
+      if(!res.ok) throw new Error('netlify function error');
+      const data = await res.json();
+
+      const block = (title, arr, isPast) => {
+        if(!arr || !arr.length) return '';
+        return `
+          <div style="margin:8px 0;font-weight:600">${title}</div>
+          ${arr.map(m => `
+            <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #eee;padding:8px;border-radius:8px;margin-bottom:6px">
+              <div style="display:flex;gap:10px;align-items:center">
+                <span>${m.home}</span>
+                <strong style="min-width:48px;text-align:center">
+                  ${isPast && m.homeScore!=null && m.awayScore!=null ? `${m.homeScore} - ${m.awayScore}` : 'VS'}
+                </strong>
+                <span>${m.away}</span>
+              </div>
+              <div style="font-size:12px;color:#555">
+                📅 ${m.date} ${m.time ? `| ⏰ ${m.time}` : ''} ${m.venue ? `| 🏟️ ${m.venue}` : ''}
+              </div>
+            </div>
+          `).join('')}
+        `;
+      };
+
+      const html = [
+        block('المباراتان السابقتان', data.past, true),
+        block('المباراتان القادمتان', data.next, false)
+      ].join('');
+
+      $list.innerHTML = html || 'لا توجد بيانات.';
+      $upd.textContent = new Date(data.updated_at).toLocaleString('ar-SA');
+    } catch (e) {
+      console.error(e);
+      $list.textContent = 'حدث خطأ أثناء جلب البيانات.';
     }
-    return out;
   }
 
-  function pickDate(m){
-    const cand = m?.date || m?.utcDate || m?.datetime || m?.kickoff || m?.time || m?.ts || m?.timestamp || m?.startTime || m?.match_time || m?.fixture?.date;
-    if (!cand) return null;
-    if (typeof cand === 'number'){
-      const ms = cand < 1e12 ? cand*1000 : cand;
-      const d = new Date(ms);
-      return isNaN(d)?null:d;
-    }
-    if (typeof cand === 'string'){
-      if (/^\d+$/.test(cand)){
-        const n = Number(cand);
-        const ms = n < 1e12 ? n*1000 : n;
-        const d = new Date(ms);
-        return isNaN(d)?null:d;
-      }
-      const d = new Date(cand);
-      return isNaN(d)?null:d;
-    }
-    return null;
-  }
-
-  // لو جاءنا عنوان مثل "Team A - Team B" أو "A vs B" نفصّله
-  function splitTitle(t){
-    if (!t) return [null,null];
-    const seps = [' - ',' – ',' — ',' vs ',' VS ',' Vs ','×',' x ',' ضد '];
-    for (const s of seps){
-      if (t.includes(s)){
-        const [a,b] = t.split(s).map(x => ar(x.trim()));
-        return [a||null, b||null];
-      }
-    }
-    return [null,null];
-  }
-
-  function extractTeamsScore(m){
-    // أسماء فرق محتملة
-    const home =
-      ar(m.home || m.homeTeam || m.home_name || m.team1 || m.team_home ||
-         m?.teams?.home || m?.teams?.home?.name || m?.fixture?.teams?.home?.name ||
-         m.h || m.ht || '') ||
-      splitTitle(m.title || m.match || m.name || '')[0];
-
-    const away =
-      ar(m.away || m.awayTeam || m.away_name || m.team2 || m.team_away ||
-         m?.teams?.away || m?.teams?.away?.name || m?.fixture?.teams?.away?.name ||
-         m.a || m.at || '') ||
-      splitTitle(m.title || m.match || m.name || '')[1];
-
-    // نتيجة محتملة
-    let homeG, awayG;
-    if (typeof m.score === 'string'){
-      const mm = m.score.match(/(-?\d+)\s*[-:–]\s*(-?\d+)/);
-      if (mm){ homeG = mm[1]; awayG = mm[2]; }
-    }
-    if (homeG==null && Array.isArray(m.ft)){ homeG = m.ft[0]; awayG = m.ft[1]; }
-    if (homeG==null && m.goals && Number.isFinite(m.goals.home) && Number.isFinite(m.goals.away)) { homeG=m.goals.home; awayG=m.goals.away; }
-    if (homeG==null && Number.isFinite(m.homeScore) && Number.isFinite(m.awayScore)) { homeG=m.homeScore; awayG=m.awayScore; }
-    if (homeG==null && m.result && Number.isFinite(m.result?.home) && Number.isFinite(m.result?.away)) { homeG=m.result.home; awayG=m.result.away; }
-    if (homeG==null && m?.fixture?.goals && Number.isFinite(m.fixture.goals.home) && Number.isFinite(m.fixture.goals.away)) { homeG=m.fixture.goals.home; awayG=m.fixture.goals.away; }
-
-    return { home, away, homeG, awayG };
-  }
-
-  function getLogo(m, side){
-    const cands = side === 'home'
-      ? [m.homeLogo, m.home_logo, m.home_logo_url, m.homeTeamLogo, m?.logos?.home, m?.teams?.homeLogo, m?.teams?.home?.logo, m?.fixture?.teams?.home?.logo, m.homeCrest, m?.home_team_logo]
-      : [m.awayLogo, m.away_logo, m.away_logo_url, m.awayTeamLogo, m?.logos?.away, m?.teams?.awayLogo, m?.teams?.away?.logo, m?.fixture?.teams?.away?.logo, m.awayCrest, m?.away_team_logo];
-    for (const p of cands){
-      if (typeof p === 'string' && /^https?:\/\//i.test(p)) return p;
-    }
-    return null;
-  }
-
-  function statusAr(s){
-    const x = String(s||'').toUpperCase();
-    if (['FT','FINISHED','ENDED'].includes(x)) return 'نهائي';
-    if (['LIVE','IN_PLAY'].includes(x)) return 'جارية';
-    if (['HT'].includes(x)) return 'استراحة';
-    if (['NS','SCHEDULED','UPCOMING'].includes(x)) return 'قادمة';
-    return '';
-  }
-
-  function rowHTML(m){
-    const { home, away, homeG, awayG } = extractTeamsScore(m);
-    const comp = ar(m.comp || m.league || m.competition || m.tournament || m?.fixture?.league?.name || '');
-    const st = statusAr(m.status || m.state || m.match_status || m?.fixture?.status?.short);
-    const d = pickDate(m);
-    const dateStr = d ? d.toLocaleString('ar-SA', { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false }) : '';
-    const scoreTxt = (homeG!=null && awayG!=null) ? `${homeG} - ${awayG}` : '—';
-
-    const hLogo = getLogo(m,'home');
-    const aLogo = getLogo(m,'away');
-
-    return `
-      <li class="mini-row">
-        <div class="team">
-          <span class="logo-wrap">${hLogo ? `<img class="logo" loading="lazy" referrerpolicy="no-referrer" src="${hLogo}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'logo-fallback',textContent:'⚽️'}))">` : `<span class="logo-fallback">⚽️</span>`}</span>
-          <span class="club"><span class="name">${home || '—'}</span></span>
-        </div>
-        <div class="score">${scoreTxt}</div>
-        <div class="team" style="justify-content:flex-end">
-          <span class="club" style="align-items:flex-end"><span class="name">${away || '—'}</span></span>
-          <span class="logo-wrap">${aLogo ? `<img class="logo" loading="lazy" referrerpolicy="no-referrer" src="${aLogo}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'logo-fallback',textContent:'⚽️'}))">` : `<span class="logo-fallback">⚽️</span>`}</span>
-        </div>
-      </li>
-      <li class="mini-row" style="padding-top:0;border-bottom:none">
-        <div class="meta" style="width:100%">${[dateStr, comp, st].filter(Boolean).join(' • ')}</div>
-      </li>
-    `;
-  }
-
-  async function load(limit){
-    const raw = (sel?.value || '').trim();
-    const q = Q_MAP[raw] ?? raw;
-    listEl.innerHTML = `<li class="mini-row"><div class="name">جاري التحميل…</div></li>`;
-    try{
-      const r = await fetch('/.netlify/functions/matches?q=' + encodeURIComponent(q) + '&limit=' + (limit ?? (expanded?12:2)) + '&fallback=1', { cache:'no-store' });
-      const arr = r.ok ? await r.json() : [];
-      // console.log('matches sample:', arr.slice(0,3)); // لفحص شكل البيانات إن احتجت
-      if (!Array.isArray(arr) || arr.length === 0){
-        listEl.innerHTML = `<li class="mini-row"><div class="name">لا توجد نتائج حالياً.</div></li>`;
-      } else {
-        const take = (limit ?? (expanded?12:2));
-        listEl.innerHTML = arr.slice(0, take).map(rowHTML).join('');
-      }
-      updEl.textContent = new Date().toLocaleString('ar-EG', { hour12:false });
-    }catch(e){
-      listEl.innerHTML = `<li class="mini-row"><div class="name">تعذّر الجلب الآن.</div></li>`;
-      updEl.textContent = '';
-      console.warn(e);
-    }
-    btnMore.textContent = expanded ? 'إخفاء' : 'المزيد';
-  }
-
-  btnRef?.addEventListener('click', () => load());
-  btnMore?.addEventListener('click', () => { expanded = !expanded; load(); });
-  sel?.addEventListener('change', () => { expanded = false; load(2); });
-
-  load(2);
-  setInterval(() => load(expanded ? 12 : 2), 15 * 60 * 1000);
+  $sel.addEventListener('change', () => load($sel.value));
+  load($sel.value);
 })();
 </script>
 
