@@ -2,55 +2,121 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>مباريات دوري روشن السعودي</title>
-  <link rel="stylesheet" href="assets/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>مباريات الدوريات السعودية</title>
+  <link rel="stylesheet" href="assets/style.css"/>
+  <style>
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin:16px 0; }
+    .tab-btn { padding:8px 12px; border:1px solid #006c35; background:#fff; color:#006c35; border-radius:10px; cursor:pointer }
+    .tab-btn.active { background:#006c35; color:#fff }
+    .match { border:1px solid #eee; border-radius:10px; padding:10px; margin:8px 0; }
+    .row { display:flex; justify-content:space-between; align-items:center; }
+    .muted { font-size:12px; color:#666 }
+  </style>
 </head>
 <body>
-  <section class="card" id="matches-card" style="margin:20px">
-    <h2>📅 مباريات دوري روشن السعودي</h2>
-    <div id="matches-container">جاري التحميل…</div>
+  <section class="card" style="margin:20px">
+    <h2>📅 مباريات الدوريات السعودية</h2>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-league="pro">دوري روشن</button>
+      <button class="tab-btn" data-league="first">دوري يلو</button>
+      <button class="tab-btn" data-league="kings">كأس الملك</button>
+      <button class="tab-btn" data-league="super">كأس السوبر</button>
+    </div>
+
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px">
+      <label>عدد العناصر:</label>
+      <select id="limitSel" class="tab-btn" style="border:1px solid #ccc;color:#333">
+        <option value="4">4</option>
+        <option value="8" selected>8</option>
+        <option value="12">12</option>
+      </select>
+
+      <label>النوع:</label>
+      <select id="typeSel" class="tab-btn" style="border:1px solid #ccc;color:#333">
+        <option value="both" selected>السابقة + القادمة</option>
+        <option value="past">السابقة</option>
+        <option value="next">القادمة</option>
+      </select>
+    </div>
+
+    <div id="updated" class="muted">آخر تحديث: —</div>
+    <div id="leagueName" style="margin-top:8px;font-weight:bold">—</div>
+
+    <div id="list" style="margin-top:10px">جاري التحميل…</div>
   </section>
 
   <script>
-    async function loadMatches() {
-      const container = document.getElementById("matches-container");
-      container.textContent = "جاري التحميل…";
+    const list = document.getElementById("list");
+    const updated = document.getElementById("updated");
+    const leagueName = document.getElementById("leagueName");
+    const limitSel = document.getElementById("limitSel");
+    const typeSel = document.getElementById("typeSel");
+    let currentLeague = "pro";
+
+    function block(title, arr, isPast) {
+      if(!arr || !arr.length) return "";
+      return `
+        <div style="margin-top:14px;font-weight:700">${title}</div>
+        ${arr.map(m => `
+          <div class="match">
+            <div class="row">
+              <span>${m.home}</span>
+              <strong>${isPast && m.homeScore!=null && m.awayScore!=null ? `${m.homeScore} - ${m.awayScore}` : "VS"}</strong>
+              <span>${m.away}</span>
+            </div>
+            <div class="muted">
+              🏟️ ${m.venue || "غير محدد"} |
+              📅 ${m.dateLocal || m.date || "—"} |
+              ⏰ ${m.timeLocal || m.time || "—"}
+            </div>
+          </div>
+        `).join("")}
+      `;
+    }
+
+    async function load() {
+      list.textContent = "جاري التحميل…";
+      const qs = new URLSearchParams({
+        league: currentLeague,
+        limit: limitSel.value,
+        type: typeSel.value
+      }).toString();
 
       try {
-        const res = await fetch("/.netlify/functions/saudi-matches");
+        const res = await fetch(`/.netlify/functions/saudi-matches?${qs}`, { cache: "no-store" });
+        if(!res.ok) throw new Error("Function error");
         const data = await res.json();
+        leagueName.textContent = data.league?.name || "—";
+        updated.textContent = "آخر تحديث: " + new Date(data.updated_at).toLocaleString("ar-SA");
 
-        if (!data.ok) {
-          container.textContent = "لا توجد بيانات حالياً";
-          return;
+        let html = "";
+        if (typeSel.value === "both" || typeSel.value === "past") {
+          html += block("المباريات السابقة", data.past, true);
         }
-
-        const block = (title, arr, isPast) => `
-          <div style="margin-top:15px;font-weight:bold">${title}</div>
-          ${arr.map(m => `
-            <div style="border:1px solid #ccc;border-radius:8px;padding:8px;margin-top:6px">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <span>${m.home}</span>
-                <strong>${isPast && m.homeScore!=null && m.awayScore!=null 
-                  ? `${m.homeScore} - ${m.awayScore}` 
-                  : "VS"}</strong>
-                <span>${m.away}</span>
-              </div>
-              <div style="font-size:12px;color:#666">
-                🏟️ ${m.venue || "غير محدد"} | 📅 ${m.date} | ⏰ ${m.time}
-              </div>
-            </div>
-          `).join("")}
-        `;
-
-        container.innerHTML = block("المباريات السابقة", data.past, true) + block("المباريات القادمة", data.next, false);
-      } catch (err) {
-        container.textContent = "حدث خطأ أثناء جلب البيانات";
+        if (typeSel.value === "both" || typeSel.value === "next") {
+          html += block("المباريات القادمة", data.next, false);
+        }
+        list.innerHTML = html || "لا توجد بيانات.";
+      } catch (e) {
+        console.error(e);
+        list.textContent = "حدث خطأ أثناء جلب البيانات.";
       }
     }
 
-    loadMatches();
+    document.querySelectorAll(".tab-btn[data-league]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn[data-league]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentLeague = btn.dataset.league;
+        load();
+      });
+    });
+    limitSel.addEventListener("change", load);
+    typeSel.addEventListener("change", load);
+
+    load();
   </script>
 </body>
 </html>
