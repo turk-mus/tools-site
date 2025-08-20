@@ -224,16 +224,10 @@
   </div>
 </section>
 
-<section class="card" id="saudi-leagues-card" dir="rtl" lang="ar" style="margin-top:22px">
+<section class="card" id="saudi-matches-box" dir="rtl" lang="ar" style="margin-top:22px">
   <div class="weather-header" style="display:flex;justify-content:space-between;align-items:center">
-    <div class="weather-title">نتائج الدوريات السعودية</div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <select id="saLeague" class="weather-btn" style="background:#fff;color:#006c35;border:1px solid #006c35">
-        <option value="pro" selected>دوري روشن</option>
-        <!-- <option value="4627">دوري يلو</option>  أضف IDs صحيحة إذا رغبت -->
-      </select>
-      <button class="weather-btn" style="cursor:pointer" onclick="location.href='matches.html'">المزيد</button>
-    </div>
+    <div class="weather-title">نتائج دوري روشن السعودي</div>
+    <button class="weather-btn" style="cursor:pointer" onclick="location.href='matches.html'">المزيد</button>
   </div>
 
   <div id="saudi-matches" style="margin-top:8px">جاري التحميل…</div>
@@ -246,58 +240,38 @@
 (async function(){
   const $list = document.getElementById('saudi-matches');
   const $upd  = document.getElementById('sa-updated');
-  const $sel  = document.getElementById('saLeague');
 
-  async function load(leagueValue){
+  async function load(){
     $list.textContent = 'جاري التحميل…';
 
-    // دعم تمرير إما alias (pro) أو league_id رقمي
-    const isNum = /^\d+$/.test(leagueValue);
-    const qs = isNum ? `league_id=${leagueValue}` : `league=${leagueValue}`;
-
     try {
-      const res = await fetch(`/.netlify/functions/saudi-matches?${qs}&limit=2&type=both`, { cache: "no-store" });
-      if(!res.ok) throw new Error('netlify function error');
+      const res = await fetch('/.netlify/functions/saudi-matches');
       const data = await res.json();
 
-      const block = (title, arr, isPast) => {
-        if(!arr || !arr.length) return '';
-        return `
-          <div style="margin:8px 0;font-weight:600">${title}</div>
-          ${arr.map(m => `
-            <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #eee;padding:8px;border-radius:8px;margin-bottom:6px">
-              <div style="display:flex;gap:10px;align-items:center">
-                <span>${m.home}</span>
-                <strong style="min-width:48px;text-align:center">
-                  ${isPast && m.homeScore!=null && m.awayScore!=null ? `${m.homeScore} - ${m.awayScore}` : 'VS'}
-                </strong>
-                <span>${m.away}</span>
-              </div>
-              <div style="font-size:12px;color:#555">
-                📅 ${m.date} ${m.time ? `| ⏰ ${m.time}` : ''} ${m.venue ? `| 🏟️ ${m.venue}` : ''}
-              </div>
-            </div>
-          `).join('')}
-        `;
-      };
+      const block = (title, arr, isPast) => `
+        <div style="margin-top:10px;font-weight:bold">${title}</div>
+        ${arr.slice(0,2).map(m => `
+          <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #eee;padding:6px;border-radius:8px;margin-top:6px">
+            <span>${m.home}</span>
+            <strong>${isPast && m.homeScore!=null && m.awayScore!=null 
+              ? `${m.homeScore} - ${m.awayScore}` 
+              : "VS"}</strong>
+            <span>${m.away}</span>
+          </div>
+        `).join("")}
+      `;
 
-      const html = [
-        block('المباراتان السابقتان', data.past, true),
-        block('المباراتان القادمتان', data.next, false)
-      ].join('');
-
-      $list.innerHTML = html || 'لا توجد بيانات.';
+      $list.innerHTML = block("المباراتان السابقتان", data.past, true) + block("المباراتان القادمتان", data.next, false);
       $upd.textContent = new Date(data.updated_at).toLocaleString('ar-SA');
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
       $list.textContent = 'حدث خطأ أثناء جلب البيانات.';
     }
   }
 
-  $sel.addEventListener('change', () => load($sel.value));
-  load($sel.value);
+  load();
 })();
 </script>
+
 
 
     <!-- ✅ صندوق الترندات (مضاف فقط) -->
