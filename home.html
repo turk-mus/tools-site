@@ -47,6 +47,46 @@
 
   <!-- Quick base styles -->
   <style>
+
+/* Dark mode fix – يعمل عندما يكون الكلاس على body */
+body.dark{
+  background:#121212; color:#e0e0e0;
+  color-scheme: dark; /* يحسّن مظهر القوائم/المدخلات */
+}
+
+/* عناصر عامة */
+body.dark .navbar,
+body.dark .breadcrumb,
+body.dark .footer{
+  background:#0f0f0f; border-color:#2b2b2b; color:#ddd;
+}
+
+body.dark .card,
+body.dark .price-card,
+body.dark .weather,
+body.dark .matches,
+body.dark .tools-grid .tool{
+  background:#1c1c1c; border-color:#2b2b2b; color:#e8e8e8;
+}
+
+body.dark .btn,
+body.dark .weather-btn,
+body.dark .pill{
+  background:#1e1e1e; color:#a6e0c2; border-color:#2b6f52;
+}
+body.dark .btn.btn--ghost{ background:transparent; color:#a6e0c2; border-color:#2b6f52; }
+
+body.dark .muted{ color:#aaa }
+body.dark .link{ color:#a6e0c2 }
+
+/* إن كان لديك عناصر تضع خلفية للكونتينر */
+body.dark .container,
+body.dark .container--narrow,
+body.dark main{
+  background:transparent;
+}
+
+
     :root { color-scheme: light dark; }
     body {
       font-family: "Tajawal", system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Kufi Arabic", sans-serif;
@@ -162,14 +202,8 @@
     <section class="card" id="fx-card" aria-labelledby="fx-title">
       <div class="card__header">
         <h2 class="card__title" id="fx-title">أسعار العملات</h2>
-        <a class="btn btn--ghost" href="history.html">المزيد</a>
       </div>
-      <ul class="list" id="fx-list">
-        <!-- مثال:
-        <li>USD / SAR: <b>3.75</b></li>
-        <li>EUR / SAR: <b>4.02</b></li>
-        -->
-      </ul>
+      <ul class="list" id="fx-list"></ul>
       <p class="meta">بيانات إرشادية.</p>
     </section>
 
@@ -177,14 +211,8 @@
     <section class="card" id="crypto-card" aria-labelledby="crypto-title">
       <div class="card__header">
         <h2 class="card__title" id="crypto-title">العملات الرقمية</h2>
-        <a class="btn btn--ghost" href="news.html#crypto">المزيد</a>
       </div>
-      <ul class="list" id="crypto-list">
-        <!-- مثال:
-        <li>BTC: <b>—</b> USDT</li>
-        <li>ETH: <b>—</b> USDT</li>
-        -->
-      </ul>
+      <ul class="list" id="crypto-list"></ul>
     </section>
 
     <!-- المباريات -->
@@ -210,33 +238,29 @@
     <section class="card" id="trends-card" aria-labelledby="trends-title">
       <div class="card__header">
         <h2 class="card__title" id="trends-title">ترندات السعودية</h2>
-        <a class="btn btn--ghost" href="news.html#trends">المزيد</a>
       </div>
-      <ol class="list" id="x-trends">
-        <!-- تمتلئ برمجيًا -->
-      </ol>
+      <ol class="list" id="x-trends"></ol>
     </section>
 
     <!-- أدوات وحاسبات -->
     <section class="card" id="tools-card" aria-labelledby="tools-title">
       <div class="card__header">
         <h2 class="card__title" id="tools-title">أدوات وحاسبات</h2>
-        <a class="btn btn--ghost" href="home.html#">المزيد</a>
       </div>
       <div class="tools-grid">
         <a class="tool" href="zakat.html">حاسبة الزكاة</a>
         <a class="tool" href="age.html">حاسبة العمر</a>
         <a class="tool" href="retirement.html">حاسبة التقاعد</a>
-        <a class="tool" href="salaries.html">مواعيد الرواتب</a>
-        <a class="tool" href="weather.html">الطقس</a>
-        <a class="tool" href="fuel.html">أسعار البنزين</a>
+        <a class="tool" href="history.html">تحويل بين الهجري والميلادي</a>
+        <a class="tool" href="VAT.html">ضريبة القيمة المضافة</a>
+        <a class="tool" href="/articles/">المقالات</a>
       </div>
     </section>
 
     <!-- الأخبار/المقالات -->
     <section class="card" id="news-card" aria-labelledby="news-title">
       <div class="card__header">
-        <h2 class="card__title" id="news-title">أخبار ومقالات</h2>
+        <h2 class="card__title" id="news-title">الأخبار</h2>
         <a class="btn btn--ghost" href="news.html">المزيد</a>
       </div>
       <ul class="list" id="articles-list"></ul>
@@ -255,45 +279,325 @@
     </div>
   </footer>
 
-  <!-- سكربتات صغيرة للصفحة فقط (لا تغيّر APIs لديك) -->
-  <script>
-    // سنة الحقوق
-    document.getElementById('y').textContent = new Date().getFullYear();
+  <!-- ملف الإجازات (نفس مصدر القديم) -->
+  <script src="/assets/holidays-data.js"></script>
 
-    // تبديل وضع الليل البسيط (إن لديك سكربت منفصل اتركه يكتب فوق هذه)
+  <!-- سكربتات الصفحة: نفس مصادر البيانات للقديم -->
+  <script>
+    // سنة الحقوق + تبديل الوضع الليلي
+    document.getElementById('y').textContent = new Date().getFullYear();
     document.getElementById('themeToggle')?.addEventListener('click', () => {
       document.body.classList.toggle('dark');
     });
 
-    // الذهب من دالتك الجاهزة
-    (async function loadGold(){
+    // ============ الذهب: نفس مصدر القديم (gold.json) ============
+    async function loadGoldFromJson(){
+      const el24 = document.getElementById('gold-24');
+      const el22 = document.getElementById('gold-22');
+      const upd  = document.getElementById('gold-updated');
+      if(!el24 || !el22) return;
+
       try{
-        const res = await fetch('/.netlify/functions/gold-live', { cache:'no-store' });
-        const data = await res.json();
+        const r = await fetch('gold.json', { cache:'no-store' });
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+
         const nf = new Intl.NumberFormat('ar-SA', { minimumFractionDigits:2, maximumFractionDigits:2 });
 
-        const grams = data.grams ? data.grams : (function(){
-          const rate = data.exchange_rate || 3.75;
-          const ounceSar = data.price_ounce_sar || (data.price_ounce_usd * rate);
-          const g24 = ounceSar / 31.1035;
-          return { "24": g24, "22": g24 * 22/24 };
-        })();
+        let g24, g22;
+        if (j.grams && (j.grams['24'] || j.grams[24])) {
+          g24 = Number(j.grams['24'] ?? j.grams[24]);
+          g22 = Number(j.grams['22'] ?? j.grams[22]) || (g24 * 22 / 24);
+        } else {
+          const ex = (j.exchange_rate != null) ? Number(j.exchange_rate) : 3.75;
+          const ounceSar = (j.price_ounce_sar != null)
+            ? Number(j.price_ounce_sar)
+            : (j.price_ounce_usd != null ? Number(j.price_ounce_usd) * ex : null);
+          if (ounceSar) {
+            const perGram24 = ounceSar / 31.1035;
+            g24 = perGram24; g22 = perGram24 * 22/24;
+          }
+        }
 
-        document.getElementById('gold-24').textContent = nf.format(Number(grams["24"] || 0));
-        document.getElementById('gold-22').textContent = nf.format(Number(grams["22"] || 0));
-        document.getElementById('gold-updated').textContent = (data.last_updated || new Date().toISOString()).replace('T',' ').slice(0,16);
-      }catch(e){ console.error('gold fetch error', e); }
-    })();
+        if (!g24 || !g22) throw new Error('no data');
 
-    // الطقس المصغّر: أبقِ مصادر بياناتك؛ هنا واجهة فقط
+        el24.textContent = nf.format(g24);
+        el22.textContent = nf.format(g22);
+        if (upd) {
+          const when =
+            j.updated_at || j.last_updated || j.updatedAt ||
+            new Date().toISOString();
+          upd.textContent = when.replace('T',' ').slice(0,16);
+        }
+      }catch(e){
+        console.error('gold json error', e);
+        // (اختياري) fallback لو أردت: لكننا نلتزم بمصدر القديم
+      }
+    }
+
+    // ============ البنزين: القديم كان ثابت ============
+    function fillFuelStatic(){
+      const f95 = document.getElementById('fuel-95');
+      const f91 = document.getElementById('fuel-91');
+      if (f95) f95.textContent = '2.33';
+      if (f91) f91.textContent = '2.18';
+    }
+
+    // ============ الطقس: نفس لوجيك القديم (Open-Meteo + revgeo) ============
     (function miniWeather(){
-      if (!('geolocation' in navigator)) return;
-      navigator.geolocation.getCurrentPosition(({coords})=>{
-        document.getElementById('wx-city').textContent = 'موقعك';
-        document.getElementById('wx-desc').textContent = '—';
-        document.getElementById('wx-temp').textContent = '—';
-      },()=>{});
+      const cityEl = document.getElementById('wx-city');
+      const descEl = document.getElementById('wx-desc');
+      const tempEl = document.getElementById('wx-temp');
+
+      const codeMap = {
+        0:['صحو','☀️'],1:['صافٍ غالبًا','🌤️'],2:['غائم جزئيًا','⛅'],3:['غائم','☁️'],
+        45:['ضباب','🌫️'],48:['ضباب','🌫️'],51:['رذاذ خفيف','🌦️'],53:['رذاذ','🌦️'],55:['رذاذ كثيف','🌧️'],
+        61:['مطر خفيف','🌧️'],63:['مطر','🌧️'],65:['مطر غزير','🌧️'],
+        66:['مطر متجمد','🌨️'],67:['مطر متجمد','🌨️'],71:['ثلج خفيف','❄️'],73:['ثلج','❄️'],75:['ثلج كثيف','❄️'],
+        77:['حبات جليد','🌨️'],80:['زخات خفيفة','🌦️'],81:['زخات','🌧️'],82:['زخات قوية','🌧️'],
+        85:['زخات ثلج','❄️'],86:['زخات ثلج قوية','❄️'],95:['عواصف رعدية','⛈️'],96:['عواصف مع بَرَد','⛈️'],99:['عواصف مع بَرَد كثيف','⛈️']
+      };
+      const wx = code => codeMap[code] ? codeMap[code][0] : 'الطقس';
+
+      async function reverseGeocode(lat, lon){
+        try{
+          const r = await fetch(`/.netlify/functions/revgeo?lat=${lat}&lon=${lon}&lang=ar`, { cache:'no-store' });
+          if(!r.ok) return null;
+          const j = await r.json();
+          const g = j?.results?.[0];
+          if(!g) return null;
+          return [g.name, g.admin1 || g.country].filter(Boolean).join('، ');
+        }catch{return null;}
+      }
+
+      async function load(lat, lon){
+        try{
+          const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`, { cache:'no-store' });
+          if(!res.ok) throw new Error('wx http ' + res.status);
+          const data = await res.json();
+          const cw = data.current_weather;
+          if(!cw) throw new Error('no cw');
+          tempEl.textContent = Math.round(cw.temperature);
+          descEl.textContent = wx(cw.weathercode);
+
+          const nice = await reverseGeocode(lat, lon);
+          cityEl.textContent = nice || 'الرياض، السعودية';
+        }catch(e){
+          console.warn('wx error', e);
+          cityEl.textContent = 'الرياض، السعودية';
+          // اظهر درجة افتراضية فقط إذا أردت، لكن نتركها — حسب القديم
+        }
+      }
+
+      // حاول تحديد الموقع لمرة واحدة، وإلا استخدم الرياض
+      const fallback = { lat: 24.7136, lon: 46.6753 };
+      if (!navigator.geolocation) { load(fallback.lat, fallback.lon); return; }
+      navigator.geolocation.getCurrentPosition(
+        pos => load(pos.coords.latitude, pos.coords.longitude),
+        ()  => load(fallback.lat, fallback.lon),
+        { enableHighAccuracy:false, timeout:15000, maximumAge:600000 }
+      );
     })();
+
+    // ============ العملات الرقمية: نفس الـ Function القديمة ============
+    (function loadCrypto(){
+      const list = document.getElementById('crypto-list');
+      if(!list) return;
+      const COIN_IDS = 'bitcoin,ethereum,tether,solana,binancecoin,ripple';
+      const nf = new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      async function run(){
+        list.innerHTML = '<li>جاري التحميل…</li>';
+        try{
+          const r = await fetch('/.netlify/functions/crypto?ids=' + encodeURIComponent(COIN_IDS), { cache: 'no-store' });
+          if(!r.ok) throw new Error('HTTP ' + r.status);
+          const arr = await r.json();
+          list.innerHTML = '';
+          arr.forEach(c => {
+            const price = c.priceUSD ?? c.price ?? c.current_price;
+            const ch    = c.change24h ?? c.changePercent24h ?? c.price_change_percentage_24h;
+            const li = document.createElement('li');
+            const chStr = (ch == null) ? '' : ((ch >= 0 ? '▲ ' : '▼ ') + nf.format(ch) + '%');
+            li.innerHTML = `<strong>${(c.symbol || c.id || '').toString().toUpperCase()}</strong>: <b>${nf.format(price)}</b> USD <span style="opacity:.8">${chStr}</span>`;
+            li.style.color = (ch ?? 0) >= 0 ? '#0a8f55' : '#c0392b';
+            list.appendChild(li);
+          });
+        }catch(e){
+          console.error(e);
+          list.innerHTML = '<li>تعذّر الجلب الآن.</li>';
+        }
+      }
+      run();
+      setInterval(run, 15 * 60 * 1000);
+    })();
+
+    // ============ المباريات: نفس Function القديم (saudi-matches) ============
+    async function loadSaudiMatches(){
+      const ul = document.getElementById('matches-list');
+      if(!ul) return;
+      ul.innerHTML = '<li>جاري التحميل…</li>';
+      try{
+        const qs = new URLSearchParams({ league: 'pro', limit: '4', type: 'both' }).toString();
+        const r  = await fetch('/.netlify/functions/saudi-matches?' + qs, { cache: 'no-store' });
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+
+        // نعرض مباراتين فقط (آخر الماضية + القادمة)
+        const rows = [];
+        const past = Array.isArray(data.past) ? data.past.slice(0, 1) : [];
+        const next = Array.isArray(data.next) ? data.next.slice(0, 1) : [];
+        const picked = [...past, ...next];
+
+        ul.innerHTML = '';
+        if(!picked.length){ ul.innerHTML = '<li>لا توجد بيانات حالياً.</li>'; return; }
+
+        picked.forEach(m => {
+          const haveScore = m.homeScore != null && m.awayScore != null;
+          const when = m.date ? new Date(m.date).toLocaleString('ar-SA', { hour12:false }) : '';
+          const li = document.createElement('li');
+          li.className = 'match';
+          li.innerHTML = `
+            <div class="match__row">
+              <span>${m.home}</span>
+              <strong style="min-width:52px;text-align:center">${haveScore ? `${m.homeScore} - ${m.awayScore}` : 'VS'}</strong>
+              <span>${m.away}</span>
+            </div>
+            <div class="match__meta muted">${when}</div>
+          `;
+          ul.appendChild(li);
+        });
+      }catch(e){
+        console.error('matches error', e);
+        ul.innerHTML = '<li>تعذّر تحميل المباريات الآن.</li>';
+      }
+    }
+
+    // ============ الإجازات: نفس منطق القديم (assets/holidays-data.js) ============
+    (function holidaysBox(){
+      function fmtRange(s,e){
+        const opt = { year:'numeric', month:'2-digit', day:'2-digit' };
+        const a = new Date(s), b = new Date(e);
+        const g = d => d.toLocaleDateString('ar-SA', opt);
+        return (g(a) === g(b)) ? g(a) : (g(a) + ' — ' + g(b));
+      }
+      function leftDays(s){
+        const ms = 86400000;
+        const t = new Date(); t.setHours(0,0,0,0);
+        const d = new Date(s); d.setHours(0,0,0,0);
+        return Math.ceil((d - t) / ms);
+      }
+      function getUpcoming(list){
+        const today = new Date(); today.setHours(0,0,0,0);
+        return (list||[])
+          .filter(h => new Date(h.end || h.start) >= today)
+          .sort((a,b) => new Date(a.start) - new Date(b.start));
+      }
+      function render(){
+        try{
+          const data = window.HOLIDAYS || [];
+          const upcoming = getUpcoming(data);
+          const box = document.getElementById('next-holiday');
+          const upd = document.getElementById('hol-updated');
+
+          if (upd && window.HOLIDAYS_UPDATED_AT) {
+            upd.textContent = new Date(window.HOLIDAYS_UPDATED_AT).toLocaleString('ar-SA', { hour12:false });
+          }
+
+          if (!upcoming.length){ box.textContent = 'لا توجد إجازات قريبة.'; return; }
+          const h = upcoming[0];
+          const days = leftDays(h.start);
+          const note = days > 0 ? `تبقّى ${days} يوم` : (days === 0 ? 'اليوم' : '');
+          box.innerHTML = `
+            <div style="font-weight:700;line-height:1.4">${h.title}</div>
+            <div class="muted" style="font-size:12px">${fmtRange(h.start, h.end)}${note ? ' • ' + note : ''}</div>
+          `;
+        }catch(e){
+          console.error(e);
+          const box = document.getElementById('next-holiday');
+          if (box) box.textContent = 'تعذّر تحميل الإجازات.';
+        }
+      }
+      document.addEventListener('DOMContentLoaded', render);
+    })();
+
+    // ============ الترندات: نفس Function القديم (x-trends-cached) ============
+    async function loadTrends(){
+      const list = document.getElementById('x-trends');
+      if(!list) return;
+      list.innerHTML = '<li>جاري التحميل…</li>';
+      try{
+        const r = await fetch('/.netlify/functions/x-trends-cached?country=SA&limit=10', { cache: 'no-store' });
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+        const arr  = Array.isArray(data) ? data : (data.trends || []);
+
+        list.innerHTML = '';
+        if (!arr.length){ list.innerHTML = '<li>لا توجد نتائج حالياً.</li>'; return; }
+
+        arr.forEach((t, i) => {
+          const raw = (t.name || '').trim();
+          if(!raw) return;
+          const label = raw.startsWith('#') ? raw : ('#' + raw);
+          const aHref = (t.url && /^https?:\/\//i.test(t.url))
+            ? t.url
+            : 'https://x.com/search?q=' + encodeURIComponent(label);
+
+          const li = document.createElement('li');
+          li.innerHTML = `<a href="${aHref}" target="_blank" rel="noopener" class="hash-link">${i+1}. ${label.replace(/^#/,'')}</a>`;
+          list.appendChild(li);
+        });
+      }catch(e){
+        console.error('trends error', e);
+        list.innerHTML = '<li>تعذّر جلب الترند الآن.</li>';
+      }
+    }
+
+    // ============ الأخبار: نفس Function القديم (news) ============
+    async function loadNews(){
+      const list = document.getElementById('articles-list');
+      if(!list) return;
+      list.innerHTML = '<li>جاري التحميل…</li>';
+      try{
+        const res = await fetch('/.netlify/functions/news?limit=4&sfw=1', { cache:'no-store' });
+        if(!res.ok) throw new Error('news http ' + res.status);
+        const data = await res.json();
+        list.innerHTML = '';
+
+        (data.items || []).forEach(item => {
+          const time = item.pubDate ? new Date(item.pubDate).toLocaleString('ar-SA', { hour12: false }) : '';
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <a href="${item.link}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
+              <div class="news-title" style="font-weight:600;line-height:1.4">${item.title}</div>
+              <div class="news-meta muted" style="font-size:12px">${item.source || ''}${time ? ' • ' + time : ''}</div>
+            </a>
+          `;
+          list.appendChild(li);
+        });
+      }catch(e){
+        console.error('news error', e);
+        list.innerHTML = '<li>تعذّر تحميل الأخبار الآن.</li>';
+      }
+    }
+
+    // (اختياري إرشادي) أسعار عملات تقليدية بسيطة — لا يوجد مصدر في القديم
+    function fillFxAdvisory(){
+      const ul = document.getElementById('fx-list');
+      if(!ul) return;
+      ul.innerHTML = `
+        <li>USD / SAR: <b>3.75</b></li>
+      `;
+    }
+
+    // تشغيل كل شيء
+    document.addEventListener('DOMContentLoaded', () => {
+      fillFuelStatic();         // وقود ثابت كما في القديم
+      loadGoldFromJson();       // الذهب من gold.json (نفس القديم)
+      loadSaudiMatches();       // المباريات من Function القديمة
+      loadTrends();             // ترندات X من Function القديمة
+      loadNews();               // الأخبار من Function القديمة
+      fillFxAdvisory();         // "إرشادي" فقط، لأن القديم لا يملك مصدر حقيقي لها
+    });
   </script>
 </body>
 </html>

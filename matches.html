@@ -4,48 +4,181 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>مباريات الدوريات السعودية</title>
-  <link rel="stylesheet" href="assets/style.css"/>
+
+  <!-- يمكن إبقاء ملفك الخارجي إن رغبت -->
+  <!-- <link rel="stylesheet" href="assets/style.css"/> -->
+
   <style>
-    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin:16px 0; }
-    .tab-btn { padding:8px 12px; border:1px solid #006c35; background:#fff; color:#006c35; border-radius:10px; cursor:pointer }
-    .tab-btn.active { background:#006c35; color:#fff }
-    .match { border:1px solid #eee; border-radius:10px; padding:10px; margin:8px 0; }
-    .row { display:flex; justify-content:space-between; align-items:center; }
-    .muted { font-size:12px; color:#666 }
+    :root{
+      --brand:#006c35;
+      --text:#222;
+      --muted:#666;
+      --card:#fff;
+      --border:#eaeaea;
+      --shadow:0 8px 24px rgba(0,0,0,.06);
+      --radius:16px;
+      --gap:12px;
+      --bg:#f6f6f6;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Tajawal", system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Kufi Arabic", sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+    }
+
+    .wrap{
+      max-width:min(1100px, 96vw);
+      margin:clamp(10px,2vw,24px) auto;
+      padding:0;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:clamp(14px,2vw,22px);
+    }
+
+    h2{margin:0 0 10px;font-size:clamp(18px,2.2vw,24px)}
+
+    /* تبويبات الدوريات */
+    .tabs{
+      display:flex; gap:8px; margin:10px 0 12px;
+      overflow:auto; padding-bottom:4px;
+      -webkit-overflow-scrolling:touch;
+      scroll-snap-type:x mandatory;
+    }
+    .tab-btn{
+      scroll-snap-align:start;
+      padding:10px 12px;
+      border:1px solid var(--brand);
+      background:#fff; color:var(--brand);
+      border-radius:12px; cursor:pointer;
+      white-space:nowrap; flex:0 0 auto;
+      font-size:14px; line-height:1; transition:.15s ease;
+    }
+    .tab-btn:hover{background:#f2faf6}
+    .tab-btn.active{background:var(--brand);color:#fff}
+
+    /* عناصر التحكم */
+    .controls{
+      display:grid; gap:10px; margin:8px 0 12px;
+      grid-template-columns:1fr; /* موبايل عمود واحد */
+    }
+    .ctrl{
+      display:flex; align-items:center; gap:8px;
+      background:#fff; border:1px solid var(--border);
+      border-radius:12px; padding:8px 10px;
+    }
+    .ctrl label{font-size:13px; color:var(--muted)}
+    .ctrl select{
+      appearance:none; width:100%;
+      border:1px solid #ccc; border-radius:8px;
+      padding:6px 10px; background:#fff; color:#333;
+      cursor:pointer;
+    }
+
+    /* معلومات أعلى القائمة */
+    .meta-top{
+      display:flex; justify-content:space-between; align-items:center;
+      gap:10px; flex-wrap:wrap; color:var(--muted); font-size:13px;
+      margin-top:8px;
+    }
+    #leagueName{font-weight:700;color:var(--text)}
+
+    /* قائمة المباريات */
+    #list{margin-top:10px}
+    .match{
+      border:1px solid var(--border); background:#fff;
+      border-radius:12px; padding:12px; margin:10px 0;
+    }
+    .match__row{
+      display:grid; align-items:center;
+      grid-template-columns:1fr auto 1fr; /* فريق | نتيجة | فريق */
+      gap:10px;
+      font-size:clamp(15px,2.2vw,18px);
+      font-weight:600;
+    }
+    .team{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .team--home{text-align:right}
+    .team--away{text-align:left}
+    .score{
+      min-width:64px; text-align:center;
+      border:1px dashed var(--border); border-radius:10px;
+      padding:4px 8px; font-weight:700;
+    }
+    .match__meta{
+      margin-top:6px; color:var(--muted); font-size:12px;
+      display:flex; gap:8px; flex-wrap:wrap;
+    }
+    .tag{background:#f4f7f5; border:1px solid var(--border); padding:2px 8px; border-radius:999px}
+
+    .empty,.error{color:var(--muted); padding:8px 0}
+
+    /* شاشات متوسطة/كبيرة */
+    @media (min-width:680px){
+      .controls{grid-template-columns:repeat(2, minmax(240px, 1fr))}
+      .match{padding:14px}
+      .match__row{font-size:18px}
+    }
+
+    /* وضع داكن اختياري (لو تضيف body.dark) */
+    .dark .card{background:#1c1c1c;border-color:#2b2b2b}
+    .dark body{background:#121212;color:#ddd}
+    .dark .ctrl{background:#1e1e1e;border-color:#2b2b2b}
+    .dark .tab-btn{background:#1e1e1e;color:#a7e2c3;border-color:#2b6f52}
+    .dark .tab-btn.active{background:#2b6f52;color:#fff}
+    .dark .match{background:#1e1e1e;border-color:#2b2b2b}
+    .dark .score{border-color:#3a3a3a}
   </style>
 </head>
 <body>
-  <section class="card" style="margin:20px">
-    <h2>📅 مباريات الدوريات السعودية</h2>
+  <main class="wrap">
+    <section class="card" aria-labelledby="page-title">
+      <h2 id="page-title">📅 مباريات الدوريات السعودية</h2>
 
-    <div class="tabs">
-      <button class="tab-btn active" data-league="pro">دوري روشن</button>
-      <button class="tab-btn" data-league="first">دوري يلو</button>
-      <button class="tab-btn" data-league="kings">كأس الملك</button>
-      <button class="tab-btn" data-league="super">كأس السوبر</button>
-    </div>
+      <!-- تبويبات -->
+      <div class="tabs" role="tablist" aria-label="اختيار الدوري">
+        <button class="tab-btn active" data-league="pro">دوري روشن</button>
+        <button class="tab-btn" data-league="first">دوري يلو</button>
+        <button class="tab-btn" data-league="kings">كأس الملك</button>
+        <button class="tab-btn" data-league="super">كأس السوبر</button>
+      </div>
 
-    <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px">
-      <label>عدد العناصر:</label>
-      <select id="limitSel" class="tab-btn" style="border:1px solid #ccc;color:#333">
-        <option value="4">4</option>
-        <option value="8" selected>8</option>
-        <option value="12">12</option>
-      </select>
+      <!-- عناصر التحكم -->
+      <div class="controls">
+        <div class="ctrl">
+          <label for="limitSel">عدد العناصر</label>
+          <select id="limitSel">
+            <option value="4">4</option>
+            <option value="8" selected>8</option>
+            <option value="12">12</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label for="typeSel">النوع</label>
+          <select id="typeSel">
+            <option value="both" selected>السابقة + القادمة</option>
+            <option value="past">السابقة</option>
+            <option value="next">القادمة</option>
+          </select>
+        </div>
+      </div>
 
-      <label>النوع:</label>
-      <select id="typeSel" class="tab-btn" style="border:1px solid #ccc;color:#333">
-        <option value="both" selected>السابقة + القادمة</option>
-        <option value="past">السابقة</option>
-        <option value="next">القادمة</option>
-      </select>
-    </div>
+      <div class="meta-top">
+        <div id="leagueName">—</div>
+        <div id="updated">آخر تحديث: —</div>
+      </div>
 
-    <div id="updated" class="muted">آخر تحديث: —</div>
-    <div id="leagueName" style="margin-top:8px;font-weight:bold">—</div>
-
-    <div id="list" style="margin-top:10px">جاري التحميل…</div>
-  </section>
+      <div id="list" aria-live="polite">جاري التحميل…</div>
+    </section>
+  </main>
 
   <script>
     const list = document.getElementById("list");
@@ -55,28 +188,45 @@
     const typeSel = document.getElementById("typeSel");
     let currentLeague = "pro";
 
-    function block(title, arr, isPast) {
-      if(!arr || !arr.length) return "";
-      return `
-        <div style="margin-top:14px;font-weight:700">${title}</div>
-        ${arr.map(m => `
-          <div class="match">
-            <div class="row">
-              <span>${m.home}</span>
-              <strong>${isPast && m.homeScore!=null && m.awayScore!=null ? `${m.homeScore} - ${m.awayScore}` : "VS"}</strong>
-              <span>${m.away}</span>
-            </div>
-            <div class="muted">
-              🏟️ ${m.venue || "غير محدد"} |
-              📅 ${m.dateLocal || m.date || "—"} |
-              ⏰ ${m.timeLocal || m.time || "—"}
-            </div>
-          </div>
-        `).join("")}
-      `;
+    function fmtWhen(m){
+      const d = m.dateLocal || m.date || "";
+      const t = m.timeLocal || m.time || "";
+      if(!d && !t) return "—";
+      try{
+        if(d && d.includes("T")){
+          const dt = new Date(d);
+          return dt.toLocaleString("ar-SA", { hour12:false });
+        }
+        if(d && t){
+          const dt = new Date(`${d} ${t}`);
+          if(!isNaN(dt)) return dt.toLocaleString("ar-SA", { hour12:false });
+        }
+      }catch{}
+      return [d,t].filter(Boolean).join(" ");
     }
 
-    async function load() {
+    function block(title, arr, isPast){
+      if(!arr || !arr.length) return "";
+      const items = arr.map(m => {
+        const haveScore = isPast && m.homeScore!=null && m.awayScore!=null;
+        return `
+          <div class="match">
+            <div class="match__row">
+              <span class="team team--home" title="${m.home||''}">${m.home||'—'}</span>
+              <strong class="score">${haveScore ? `${m.homeScore} - ${m.awayScore}` : "VS"}</strong>
+              <span class="team team--away" title="${m.away||''}">${m.away||'—'}</span>
+            </div>
+            <div class="match__meta">
+              <span class="tag">🏟 ${m.venue || "غير محدد"}</span>
+              <span class="tag">🗓 ${fmtWhen(m)}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+      return `<div style="margin-top:14px;font-weight:700">${title}</div>${items}`;
+    }
+
+    async function load(){
       list.textContent = "جاري التحميل…";
       const qs = new URLSearchParams({
         league: currentLeague,
@@ -84,30 +234,31 @@
         type: typeSel.value
       }).toString();
 
-      try {
-        const res = await fetch(`/.netlify/functions/saudi-matches?${qs}`, { cache: "no-store" });
-        if(!res.ok) throw new Error("Function error");
+      try{
+        const base = location.origin || "";
+        const res = await fetch(`${base}/.netlify/functions/saudi-matches?${qs}`, { cache:"no-store" });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+
         leagueName.textContent = data.league?.name || "—";
-        updated.textContent = "آخر تحديث: " + new Date(data.updated_at).toLocaleString("ar-SA");
+        if (data.updated_at){
+          updated.textContent = "آخر تحديث: " + new Date(data.updated_at).toLocaleString("ar-SA", { hour12:false });
+        }
 
         let html = "";
-        if (typeSel.value === "both" || typeSel.value === "past") {
-          html += block("المباريات السابقة", data.past, true);
-        }
-        if (typeSel.value === "both" || typeSel.value === "next") {
-          html += block("المباريات القادمة", data.next, false);
-        }
-        list.innerHTML = html || "لا توجد بيانات.";
-      } catch (e) {
+        if (typeSel.value === "both" || typeSel.value === "past")  html += block("المباريات السابقة", data.past, true);
+        if (typeSel.value === "both" || typeSel.value === "next")  html += block("المباريات القادمة", data.next, false);
+
+        list.innerHTML = html || `<div class="empty">لا توجد بيانات.</div>`;
+      }catch(e){
         console.error(e);
-        list.textContent = "حدث خطأ أثناء جلب البيانات.";
+        list.innerHTML = `<div class="error">حدث خطأ أثناء جلب البيانات (${e.message}).</div>`;
       }
     }
 
-    document.querySelectorAll(".tab-btn[data-league]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab-btn[data-league]").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-btn[data-league]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        document.querySelectorAll(".tab-btn[data-league]").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
         currentLeague = btn.dataset.league;
         load();
