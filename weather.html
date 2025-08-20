@@ -2,56 +2,95 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="google-adsense-account" content="ca-pub-6286972152122784">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>الطقس في مناطق السعودية</title>
+
+  <!-- ستايل موقعك العام (يظل شغال لكن لن يتعارض) -->
   <link rel="stylesheet" href="styles.css">
+
   <style>
-    body{font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#0f172a; color:#e5e7eb}
-    .container{max-width:1100px;margin:0 auto;padding:16px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
-    .card{background:#111827;border:1px solid #374151;border-radius:14px;padding:14px;transition:.15s;display:flex;gap:10px;align-items:center}
-    .card:hover{transform:translateY(-2px);box-shadow:0 10px 18px rgba(0,0,0,.18)}
-    .city{font-weight:700}
-    .muted{color:#9ca3af;font-size:14px}
-    .emoji{font-size:28px}
+    /* ====== Weather App Namespace ====== */
+    #wx-app { --bg:#0f172a; --text:#e5e7eb; --muted:#9ca3af; --card:#111827; --border:#374151; --accent:#4ade80; }
+    #wx-app, #wx-app * { box-sizing: border-box; }
+    #wx-app { background:var(--bg); color:var(--text); min-height:100dvh; }
+
+    #wx-app .wx-container { max-width:1200px; margin-inline:auto; padding:20px; }
+    #wx-app h1 { font-size:28px; margin:0 0 8px; }
+    #wx-app .wx-sub { color:var(--muted); margin-bottom:18px; }
+
+    #wx-app .wx-toolbar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+    #wx-app .wx-search { flex:1; min-width:260px; }
+    #wx-app .wx-input {
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+      background:var(--card); color:var(--text);
+    }
+    #wx-app .wx-btn {
+      padding:10px 14px; border-radius:10px; border:1px solid var(--border);
+      background:var(--card); color:var(--text); cursor:pointer;
+    }
+    #wx-app .wx-btn:hover { border-color:#4b5563; }
+
+    #wx-app .wx-region { background:var(--card); border:1px solid var(--border); border-radius:14px; margin-bottom:12px; overflow:hidden; }
+    #wx-app .wx-region-h {
+      display:flex; align-items:center; gap:10px; justify-content:space-between; padding:14px 16px; cursor:pointer;
+    }
+    #wx-app .wx-region-title { font-weight:800; }
+    #wx-app .wx-count { color:var(--muted); font-size:14px; }
+    #wx-app .wx-chev { transition:.15s; }
+    #wx-app .wx-region.wx-open .wx-chev { transform:rotate(180deg); }
+
+    #wx-app .wx-cities { display:none; border-top:1px solid var(--border); padding:14px; }
+    #wx-app .wx-region.wx-open .wx-cities { display:block; }
+
+    #wx-app .wx-cities-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+
+    #wx-app .wx-card {
+      background:#0f172a; border:1px solid var(--border); border-radius:12px;
+      padding:12px; display:flex; gap:10px; align-items:center; transition:.15s;
+    }
+    #wx-app .wx-card:hover { transform:translateY(-2px); box-shadow:0 10px 18px rgba(0,0,0,.18); }
+
+    #wx-app .wx-city { font-weight:700; }
+    #wx-app .wx-muted { color:var(--muted); font-size:14px; }
+    #wx-app .wx-emoji { font-size:28px; }
+
+    #wx-app .wx-skeleton{background:linear-gradient(90deg,#0b1222 25%,#10192f 37%,#0b1222 63%);background-size:400% 100%;animation:wxs 1.2s ease-in-out infinite}
+    @keyframes wxs{0%{background-position:100% 50%}100%{background-position:0 50%}}
+
+    #wx-app .wx-footer { margin-top:20px; color:var(--muted); font-size:12px; }
+    #wx-app a { color:var(--accent); text-decoration:none; }
+    #wx-app a:hover { text-decoration:underline; }
+
+    /* منع أي Grid/Sidebar عام من الموقع يخرّب العرض داخل صفحة الطقس */
+    #wx-app { display:block; width:100%; }
   </style>
 
-  </style>
-  <!-- Google tag (gtag.js) -->
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-D8W8C8PYS9');
-</script>
-
+  <!-- (اختياري) Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
+  <script>
+    window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
+    gtag('js', new Date()); gtag('config','G-D8W8C8PYS9');
+  </script>
 </head>
 <body>
-  <div class="container">
-    <h1 style="margin-bottom:16px">الطقس في مناطق المملكة</h1>
-    <div id="wx-grid" class="grid"></div>
+  <div id="wx-app" dir="rtl" lang="ar">
+    <div class="wx-container">
+      <h1>الطقس في مناطق المملكة</h1>
+      <div class="wx-sub">اختر المنطقة لعرض حالة الطقس في مدنها ومحافظاتها.</div>
+
+      <div class="wx-toolbar">
+        <div class="wx-search"><input id="wx-q" class="wx-input" placeholder="ابحث باسم مدينة أو محافظة…" /></div>
+        <button id="wx-expandAll" class="wx-btn">فتح الكل</button>
+        <button id="wx-collapseAll" class="wx-btn">إغلاق الكل</button>
+      </div>
+
+      <div id="wx-regions"></div>
+
+      <div class="wx-footer">المصدر: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></div>
+    </div>
   </div>
 
   <script>
-    const REGIONS = [
-      {name:'الرياض',lat:24.7136,lon:46.6753},
-      {name:'مكة المكرمة',lat:21.3891,lon:39.8579},
-      {name:'المدينة المنورة',lat:24.5247,lon:39.5692},
-      {name:'الشرقية',lat:26.4207,lon:50.0888},
-      {name:'القصيم',lat:26.2074,lon:43.4837},
-      {name:'عسير',lat:18.2164,lon:42.5053},
-      {name:'حائل',lat:27.5114,lon:41.7208},
-      {name:'تبوك',lat:28.3833,lon:36.5833},
-      {name:'جازان',lat:16.8892,lon:42.5706},
-      {name:'نجران',lat:17.4924,lon:44.1277},
-      {name:'الباحة',lat:20.0129,lon:41.4677},
-      {name:'الحدود الشمالية',lat:30.984,lon:41.038}
-    ];
-
     const WMO = {
       0:['صافٍ','☀️'],1:['غالبًا صافٍ','🌤️'],2:['غائم جزئيًا','⛅'],3:['غائم','☁️'],
       45:['ضباب','🌫️'],48:['ضباب متجمد','🌫️'],
@@ -64,35 +103,139 @@
       95:['عواصف رعدية','⛈️'],96:['عواصف مع برد خفيف','⛈️'],99:['عواصف مع برد غزير','⛈️']
     };
 
-    const grid = document.getElementById('wx-grid');
+    const SA_REGIONS = [
+      { name:'الرياض', cities:[
+        ['الرياض',24.7136,46.6753],['الخرج',24.1483,47.3050],['الدلم',23.9907,47.1597],
+        ['المزاحمية',24.4703,46.2669],['القويعية',24.0667,45.2800],['وادي الدواسر',20.3833,45.1167],
+        ['الأفلاج (ليلى)',22.2825,46.7314],['الزلفي',26.2992,44.8159],['شقراء',25.2583,45.2450],['رماح',25.2428,47.1608]
+      ]},
+      { name:'مكة المكرمة', cities:[
+        ['مكة',21.3891,39.8579],['جدة',21.4858,39.1925],['الطائف',21.2703,40.4158],
+        ['الليث',20.1500,40.2667],['القنفذة',19.1264,41.0789],['رابغ',22.7986,39.0349],
+        ['الجموم',21.7187,39.6956],['خليص',22.2931,39.2676],['الخرمة',21.9148,42.0213]
+      ]},
+      { name:'المدينة المنورة', cities:[
+        ['المدينة',24.5247,39.5692],['ينبع',24.0895,38.0618],['العلا',26.6167,37.9167],
+        ['بدر',23.7819,38.7906],['خيبر',25.6944,39.2708]
+      ]},
+      { name:'الشرقية', cities:[
+        ['الدمام',26.4207,50.0888],['الخبر',26.2172,50.1971],['الظهران',26.2883,50.1130],
+        ['الأحساء (الهفوف)',25.3833,49.5833],['الجبيل',27.0049,49.6582],['القطيف',26.5202,50.0246],
+        ['حفر الباطن',28.4328,45.9700],['بقيق',25.9333,49.6667],['رأس تنورة',26.7081,50.0619],['النعيرية',27.4833,48.4833]
+      ]},
+      { name:'القصيم', cities:[
+        ['بريدة',26.3591,43.9819],['عنيزة',26.0840,43.9939],['الرس',25.8694,43.4973],
+        ['المذنب',25.8601,44.2228],['البدائع',26.3270,43.6575],['البكيرية',26.1451,43.6590],['النبهانية',25.8500,43.0500],['عيون الجواء',26.2447,43.4950]
+      ]},
+      { name:'عسير', cities:[
+        ['أبها',18.2465,42.5117],['خميس مشيط',18.3064,42.7290],['محايل',18.5500,42.0500],
+        ['رجال ألمع',18.2000,42.3000],['بيشة',19.9833,42.6000],['ظهران الجنوب',17.9442,43.5125],
+        ['سراة عبيدة',18.0742,43.1496],['النماص',19.1460,42.1240],['تنومة',19.1333,42.1333]
+      ]},
+      { name:'حائل', cities:[
+        ['حائل',27.5114,41.7208],['الغزالة',27.4400,41.0000],['الشنان',27.1600,42.0000],['الشملي',27.3200,40.9000]
+      ]},
+      { name:'تبوك', cities:[
+        ['تبوك',28.3833,36.5833],['الوجه',26.2455,36.4525],['ضباء',27.3513,35.7020],
+        ['أملج',25.0670,37.2610],['حقل',29.2807,34.9522],['تيماء',27.6343,38.5469]
+      ]},
+      { name:'جازان', cities:[
+        ['جازان',16.8892,42.5706],['صامطة',16.6113,42.9440],['أحد المسارحة',16.7000,42.9500],
+        ['أبو عريش',16.9667,42.8333],['صبيا',17.1500,42.6333],['بيش',17.4500,42.5500],
+        ['الدرب',17.7188,42.2398],['العارضة',17.0956,43.1495],['فرسان',16.7000,42.1160]
+      ]},
+      { name:'نجران', cities:[
+        ['نجران',17.4924,44.1277],['شرورة',17.4679,47.1336],['حبونا',17.4050,44.5450],['بدر الجنوب',17.9080,44.5400],['يدمة',18.0000,44.6000]
+      ]},
+      { name:'الباحة', cities:[
+        ['الباحة',20.0129,41.4677],['بلجرشي',19.8997,41.5439],['المندق',20.1986,41.3010],
+        ['المخواة',19.9954,41.4443],['قلوة',19.4449,41.2811],['العقيق',20.2760,41.6647]
+      ]},
+      { name:'الجوف', cities:[
+        ['سكاكا',29.9697,40.2064],['القريات',31.3300,37.3433],['دومة الجندل',29.8100,39.8600],['طبرجل',30.5000,38.2167]
+      ]},
+      { name:'الحدود الشمالية', cities:[
+        ['عرعر',30.9800,41.0380],['رفحاء',29.6203,43.4946],['طريف',31.6772,38.6637],['العويقيلة',30.3600,43.6500]
+      ]}
+    ];
+
+    const $regions = document.getElementById('wx-regions');
+    const $q = document.getElementById('wx-q');
 
     async function fetchWeather(lat, lon){
       const u = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`;
-      const r = await fetch(u); if(!r.ok) throw new Error();
+      const r = await fetch(u);
+      if(!r.ok) throw new Error('fetch failed');
       return r.json();
     }
 
-    async function load(){
-      for (const r of REGIONS){
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `<div class="emoji">⛅</div>
-                          <div><div class="city">${r.name}</div>
-                          <div class="muted">جاري الجلب…</div></div>`;
-        grid.appendChild(card);
-        try{
-          const data = await fetchWeather(r.lat, r.lon);
-          const t = Math.round(data.current.temperature_2m);
-          const code = data.current.weather_code;
-          const [desc, emoji] = WMO[code] || ['غير متاح','⛅'];
-          card.querySelector('.emoji').textContent = emoji;
-          card.querySelector('.muted').textContent = `${t}° م — ${desc}`;
-        }catch{
-          card.querySelector('.muted').textContent = 'تعذّر الجلب';
+    function renderRegion(region){
+      const el = document.createElement('section');
+      el.className = 'wx-region';
+      el.innerHTML = `
+        <div class="wx-region-h" role="button" aria-expanded="false">
+          <div>
+            <div class="wx-region-title">${region.name}</div>
+            <div class="wx-count">${region.cities.length} مدن/محافظة</div>
+          </div>
+          <div class="wx-chev">▼</div>
+        </div>
+        <div class="wx-cities"><div class="wx-cities-grid"></div></div>
+      `;
+      const head = el.querySelector('.wx-region-h');
+      const grid = el.querySelector('.wx-cities-grid');
+
+      head.addEventListener('click', async () => {
+        const opened = el.classList.toggle('wx-open');
+        head.setAttribute('aria-expanded', opened ? 'true' : 'false');
+        if (opened && !grid.dataset.loaded){
+          region.cities.forEach(([city])=>{
+            const c = document.createElement('div');
+            c.className='wx-card';
+            c.innerHTML = `<div class="wx-emoji wx-skeleton" style="width:32px;height:32px;border-radius:8px"></div>
+                           <div><div class="wx-city">${city}</div><div class="wx-muted">جاري الجلب…</div></div>`;
+            grid.appendChild(c);
+          });
+          const cards = grid.querySelectorAll('.wx-card');
+          await Promise.all(region.cities.map(async ([city,lat,lon],i)=>{
+            try{
+              const data = await fetchWeather(lat,lon);
+              const t = Math.round(data.current.temperature_2m);
+              const code = data.current.weather_code;
+              const [desc, emoji] = WMO[code] || ['غير متاح','⛅'];
+              cards[i].querySelector('.wx-emoji').textContent = emoji;
+              cards[i].querySelector('.wx-emoji').classList.remove('wx-skeleton');
+              cards[i].querySelector('.wx-muted').textContent = `${t}° م — ${desc}`;
+            }catch(e){
+              cards[i].querySelector('.wx-muted').textContent = 'تعذّر الجلب';
+            }
+          }));
+          grid.dataset.loaded = '1';
         }
-      }
+      });
+
+      return el;
     }
-    load();
+
+    SA_REGIONS.forEach(r => $regions.appendChild(renderRegion(r)));
+
+    $q.addEventListener('input', () => {
+      const q = $q.value.trim();
+      const terms = q ? q.split(/\s+/) : [];
+      [...$regions.children].forEach((sec, idx)=>{
+        const region = SA_REGIONS[idx];
+        const match = !terms.length || region.cities.some(([name]) => terms.every(t=>name.includes(t)));
+        sec.style.display = match ? '' : 'none';
+        if (q && match && !sec.classList.contains('wx-open')) sec.querySelector('.wx-region-h').click();
+      });
+    });
+
+    document.getElementById('wx-expandAll').onclick = () => {
+      [...$regions.children].forEach(sec => { if(!sec.classList.contains('wx-open')) sec.querySelector('.wx-region-h').click(); });
+    };
+    document.getElementById('wx-collapseAll').onclick = () => {
+      [...$regions.children].forEach(sec => { if(sec.classList.contains('wx-open')) sec.querySelector('.wx-region-h').click(); });
+    };
   </script>
 </body>
 </html>

@@ -43,7 +43,7 @@
 
   <!-- Base CSS -->
   <link rel="preload" href="/assets/home.css" as="style" />
-  <link rel="stylesheet" href="/assets/home.css" />
+  <link rel="stylesheet" href="styles.css?v=1">
 
   <!-- Quick base styles -->
   <style>
@@ -92,14 +92,6 @@
     </div>
 
     <div class="navbar__center">
-      <form class="search" role="search" onsubmit="return false">
-        <input class="input" type="search" placeholder="ابحث في الموقع…" aria-label="بحث" />
-        <button class="btn btn--primary" type="submit">بحث</button>
-      </form>
-    </div>
-
-    <div class="navbar__right">
-      <button id="themeToggle" class="icon-btn" aria-label="تبديل الوضع الليلي">🌙</button>
       <nav class="quick-links" aria-label="روابط">
         <a class="link" href="gold.html">الذهب</a>
         <a class="link" href="fuel.html">البنزين</a>
@@ -108,6 +100,10 @@
         <a class="link" href="news.html">الأخبار</a>
         <a class="link" href="contact.html">تواصل</a>
       </nav>
+    </div>
+
+    <div class="navbar__right">
+      <button id="themeToggle" class="icon-btn" aria-label="تبديل الوضع الليلي">🌙</button>
     </div>
   </header>
 
