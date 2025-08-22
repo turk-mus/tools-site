@@ -3,9 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="google-adsense-account" content="ca-pub-6286972152122784">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  <title>الإجازات الدراسية</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>الإجازات الدراسية</title>
   <meta name="description" content="قائمة الإجازات الدراسية القادمة في السعودية.">
   <link rel="stylesheet" href="styles.css">
+
+  <!-- ADDED: تحسينات عرض الجوال -->
+  <meta name="theme-color" content="#006c35"><!-- ADDED -->
+  <meta name="format-detection" content="telephone=no"><!-- ADDED -->
+
+  <!-- ADDED: canonical (عدّل المسار إذا كان مختلفًا) -->
+  <link rel="canonical" href="https://as3aralywm.com/holidays.html"><!-- ADDED -->
+
   <style>
     body { background:#f7f7f7; font-family: system-ui, -apple-system, Segoe UI, Tahoma; }
     .container { max-width: 980px; margin: 24px auto; padding: 0 12px; }
@@ -17,19 +26,22 @@
     .item { padding:10px 0; border-bottom:1px solid #eee; }
     .meta { font-size:12px; color:#666; margin-top:4px; }
     .updated { font-size:12px; color:#777; margin:8px 0 6px; }
+    /* ADDED: تحسين تركيز لوحة المفاتيح */
+    :focus-visible { outline: 2px solid #006c35; outline-offset: 3px; border-radius:6px; }
   </style>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
 
-  gtag('config', 'G-D8W8C8PYS9');
-</script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D8W8C8PYS9');
+  </script>
 </head>
 <body>
-  <div class="container">
+  <!-- ADDED: main landmark للقرّاء الآليين -->
+  <main class="container" id="main" role="main"><!-- ADDED -->
     <div class="card">
       <div class="head">
         <div class="title">الإجازات الدراسية</div>
@@ -37,9 +49,21 @@
       </div>
 
       <div id="hol-updated" class="updated">آخر تحديث: —</div>
-      <ul id="hol-list" class="list"><li>جاري التحميل…</li></ul>
+
+      <!-- ADDED: aria-live لتحديثات ديناميكية -->
+      <ul id="hol-list" class="list" aria-live="polite"><li>جاري التحميل…</li></ul>
+
+      <!-- ADDED: فقرة توضيحية قصيرة ترفع قيمة المحتوى -->
+      <p class="meta">تعتمد التواريخ على التقويم الدراسي المعتمد وقد تتغير رسميًا. نعرض هنا الإجازات القادمة فقط، وللاطلاع على الماضي استخدم دليل المدرسة أو وزارة التعليم.</p><!-- ADDED -->
     </div>
-  </div>
+
+    <!-- ADDED: بديل بدون جافاسكربت -->
+    <noscript>
+      <div class="card" style="margin-top:12px">
+        تحتاج هذه الصفحة إلى تفعيل JavaScript لعرض الإجازات القادمة. يرجى تفعيلها أو مراجعة موقع وزارة التعليم.
+      </div>
+    </noscript>
+  </main>
 
   <!-- نفس ملف البيانات -->
   <script src="/assets/holidays-data.js"></script>
@@ -76,6 +100,37 @@
       });
 
       if (!list.children.length) list.innerHTML = '<li>لا توجد بيانات.</li>';
+
+      // ADDED: JSON-LD ديناميكي (ItemList + Events) لرفع SEO/E-E-A-T
+      try {
+        const head = document.head;
+        // إزالة أي سكربت سابق ناتج عن إعادة رسم
+        document.querySelectorAll('script[data-jsonld="holidays"]').forEach(s => s.remove());
+
+        const items = holidays.slice(0, 10).map((h, idx) => ({
+          "@type": "ListItem",
+          "position": idx + 1,
+          "item": {
+            "@type": "Event",
+            "name": h.title,
+            "startDate": h.start,
+            "endDate": h.end || h.start
+          }
+        }));
+
+        const json = {
+          "@context":"https://schema.org",
+          "@type":"ItemList",
+          "name":"الإجازات الدراسية القادمة في السعودية",
+          "itemListElement": items
+        };
+
+        const s = document.createElement('script');
+        s.type = 'application/ld+json';
+        s.dataset.jsonld = 'holidays';
+        s.textContent = JSON.stringify(json);
+        head.appendChild(s);
+      } catch (e) { /* ignore */ }
     }
     document.addEventListener('DOMContentLoaded', renderAll);
   </script>

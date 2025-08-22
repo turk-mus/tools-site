@@ -7,6 +7,18 @@
   <title>حاسبة ضريبة القيمة المضافة</title>
   <meta name="description" content="احسب أو استخرج ضريبة القيمة المضافة بنسبة 15% حسب النظام السعودي.">
   <meta name="keywords" content="ضريبة القيمة المضافة, حاسبة الضريبة, السعودية, VAT, 15%">
+
+  <!-- ADDED: تحسينات SEO وتجربة الجوال -->
+  <link rel="canonical" href="https://as3aralywm.com/VAT"> <!-- ADDED -->
+  <meta name="format-detection" content="telephone=no"> <!-- ADDED -->
+  <meta name="theme-color" content="#006c35"> <!-- ADDED -->
+  <meta property="og:type" content="website"> <!-- ADDED -->
+  <meta property="og:title" content="حاسبة ضريبة القيمة المضافة 15% | السعودية"> <!-- ADDED -->
+  <meta property="og:description" content="أدخل المبلغ لتحسب الضريبة أو تستخرج الصافي من المبلغ الشامل."> <!-- ADDED -->
+  <meta property="og:url" content="https://as3aralywm.com/VAT"> <!-- ADDED -->
+  <meta property="og:image" content="/assets/og-cover.jpg"> <!-- ADDED -->
+  <meta name="twitter:card" content="summary_large_image"> <!-- ADDED -->
+
   <link href="https://fonts.googleapis.com/css2?family=Tajawal&display=swap" rel="stylesheet">
   <style>
     body {
@@ -36,6 +48,7 @@
       justify-content: center;
       gap: 15px;
       margin: 15px 0;
+      flex-wrap: wrap; /* ADDED */
     }
 
     .top-buttons button {
@@ -81,6 +94,8 @@
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 8px;
+      background: inherit; /* ADDED */
+      color: inherit;      /* ADDED */
     }
 
     button.calc-btn {
@@ -103,6 +118,7 @@
       font-weight: bold;
       text-align: center;
       margin-top: 20px;
+      min-height: 1.8em; /* ADDED: لتثبيت الارتفاع */
     }
 
     .footer {
@@ -111,19 +127,55 @@
       font-size: 14px;
       color: #777;
     }
+
+    /* ADDED: قسم توضيحي أسفل الحاسبة لرفع قيمة المحتوى */
+    .faq, .method {
+      max-width: 600px;
+      margin: 16px auto;
+      background: #fff;
+      color: #333;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.06);
+      padding: 16px;
+      line-height: 1.9;
+    }
+    .dark-mode .faq, .dark-mode .method { background:#2b2b2b; color:#eee; }
+    details{ margin: 8px 0; }
   </style>
+
   <!-- Google tag (gtag.js) -->
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D8W8C8PYS9');
+  </script>
 
-  gtag('config', 'G-D8W8C8PYS9');
-</script>
-
-
+  <!-- ADDED: Structured Data لرفع جودة الصفحة -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Article",
+    "headline":"حاسبة ضريبة القيمة المضافة 15% في السعودية",
+    "inLanguage":"ar",
+    "author":{"@type":"Organization","name":"أسعار اليوم السعودية"},
+    "publisher":{"@type":"Organization","name":"أسعار اليوم السعودية"},
+    "mainEntityOfPage":{"@type":"WebPage","@id":"https://as3aralywm.com/VAT"}
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {"@type":"Question","name":"كيف أحسب إضافة ضريبة 15%؟","acceptedAnswer":{"@type":"Answer","text":"اضرب المبلغ قبل الضريبة × 15% للحصول على الضريبة، ثم أضفها للمجموع."}},
+      {"@type":"Question","name":"كيف أستخرج الصافي من مبلغ شامل؟","acceptedAnswer":{"@type":"Answer","text":"اقسم المبلغ الشامل على 1.15 للحصول على الصافي بدون الضريبة، والفرق هو قيمة الضريبة."}},
+      {"@type":"Question","name":"هل النسبة ثابتة؟","acceptedAnswer":{"@type":"Answer","text":"النسبة المعمول بها 15% وفق الأنظمة الحالية. راجع المصادر الرسمية لأي تحديثات مستقبلية."}}
+    ]
+  }
+  </script>
 </head>
 <body>
 
@@ -131,13 +183,14 @@
 
   <div class="top-buttons">
     <button onclick="goHome()">🏠 الصفحة الرئيسية</button>
-    <button onclick="toggleDarkMode()">🌙 الوضع الليلي</button>
+    <button onclick="toggleDarkMode()" id="darkBtn">🌙 الوضع الليلي</button> <!-- ADDED: زر يُحدّث النص -->
   </div>
 
-  <div class="container">
+  <div class="container" role="form" aria-labelledby="vat-heading">
+    <h1 id="vat-heading" style="position:absolute; left:-9999px; top:-9999px;">حاسبة ضريبة القيمة المضافة</h1> <!-- ADDED: تحسين وصول -->
     <div class="form-group">
       <label for="mode">طريقة الحساب:</label>
-      <select id="mode">
+      <select id="mode" aria-label="طريقة الحساب">
         <option value="add">إضافة الضريبة (15%)</option>
         <option value="remove">إزالة الضريبة (من مبلغ شامل)</option>
       </select>
@@ -145,7 +198,8 @@
 
     <div class="form-group">
       <label for="amount">المبلغ:</label>
-      <input type="number" id="amount" placeholder="أدخل المبلغ">
+      <input type="number" id="amount" inputmode="decimal" placeholder="أدخل المبلغ" aria-describedby="hint" min="0" step="0.01">
+      <small id="hint" style="color:#777">مثال: 100 أو 199.95</small>
     </div>
 
     <button class="calc-btn" onclick="calculateVAT()">🧾 احسب</button>
@@ -157,33 +211,81 @@
     </div>
   </div>
 
+  <!-- ADDED: قسم منهجية + أسئلة شائعة لزيادة قيمة الصفحة -->
+  <section class="method">
+    <h2 style="margin:0 0 8px;">المنهجية</h2>
+    <ul style="margin:0; padding-inline-start:18px;">
+      <li>الإضافة: إجمالي = المبلغ × 1.15</li>
+      <li>الاستخراج: الصافي = المبلغ الشامل ÷ 1.15</li>
+      <li>يتم التقريب لرقمين عشريين للعرض، ويمكن تعديل ذلك عند الحاجة.</li>
+    </ul>
+  </section>
+
+  <section class="faq">
+    <h2 style="margin:0 0 8px;">أسئلة شائعة</h2>
+    <details><summary>هل تشمل الأرقام الرسوم الأخرى؟</summary>
+      <p>الحاسبة تختص بضريبة القيمة المضافة فقط. أي رسوم إضافية (شحن، خدمة...) تُضاف خارج الحساب.</p>
+    </details>
+    <details><summary>هل يمكن تغيير النسبة؟</summary>
+      <p>هذه النسخة ثابتة على 15% وفق النظام الحالي. يمكن توفير خانة لتعديل النسبة عند الطلب.</p>
+    </details>
+  </section>
+
+  <noscript>
+    <div class="container" style="margin-top:16px">
+      تنبيه: تحتاج هذه الحاسبة إلى تمكين JavaScript. يرجى تفعيلها لإتمام الحساب.
+    </div>
+  </noscript>
+
   <script>
     function goHome() {
       window.location.href = "home.html";
     }
 
-    function toggleDarkMode() {
-      document.body.classList.toggle("dark-mode");
+    // ADDED: حفظ تفضيل الوضع الليلي وتحديث نص الزر
+    function applyDarkPref(){
+      const pref = localStorage.getItem('pref-dark') === '1';
+      document.body.classList.toggle('dark-mode', pref);
+      const btn = document.getElementById('darkBtn');
+      if(btn) btn.textContent = pref ? '☀️ الوضع الفاتح' : '🌙 الوضع الليلي';
     }
+    function toggleDarkMode() {
+      const isDark = document.body.classList.toggle("dark-mode");
+      localStorage.setItem('pref-dark', isDark ? '1' : '0');
+      const btn = document.getElementById('darkBtn');
+      if(btn) btn.textContent = isDark ? '☀️ الوضع الفاتح' : '🌙 الوضع الليلي';
+    }
+    applyDarkPref(); // ADDED
+
+    // تنسيق أرقام عربي
+    const nf = new Intl.NumberFormat('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     function calculateVAT() {
-      const amount = parseFloat(document.getElementById("amount").value || 0);
+      const amountRaw = document.getElementById("amount").value;
+      const amount = parseFloat(amountRaw);
       const mode = document.getElementById("mode").value;
       const vatRate = 0.15;
+      const resultEl = document.getElementById("result");
+
+      if (isNaN(amount) || amount < 0) {
+        resultEl.textContent = "الرجاء إدخال مبلغ صحيح (صفر أو أعلى)."; // ADDED: تحقق إدخال
+        return;
+      }
+
       let vat = 0;
-      let result = "";
+      let text = "";
 
       if (mode === "add") {
         vat = amount * vatRate;
         const total = amount + vat;
-        result = `💰 الضريبة: ${vat.toFixed(2)} ريال | الإجمالي: ${total.toFixed(2)} ريال`;
+        text = `💰 الضريبة: ${nf.format(vat)} ريال | الإجمالي: ${nf.format(total)} ريال`;
       } else {
         const base = amount / (1 + vatRate);
         vat = amount - base;
-        result = `💸 الضريبة: ${vat.toFixed(2)} ريال | الصافي: ${base.toFixed(2)} ريال`;
+        text = `💸 الضريبة: ${nf.format(vat)} ريال | الصافي: ${nf.format(base)} ريال`;
       }
 
-      document.getElementById("result").textContent = result;
+      resultEl.textContent = text;
     }
   </script>
 

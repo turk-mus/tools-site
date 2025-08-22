@@ -6,6 +6,11 @@
   <meta name="google-adsense-account" content="ca-pub-6286972152122784">
   <title>حاسبة العمر</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal&display=swap" rel="stylesheet">
+
+  <!-- ADDED: Meta description + canonical لرفع SEO -->
+  <meta name="description" content="حاسبة العمر بالهجري والميلادي: احسب عمرك بدقة تقريبية بالسنوات والأشهر والأيام، مع توضيح الفرق بين التقويمين ونصائح الاستخدام." />
+  <link rel="canonical" href="https://as3aralywm.com/age.html" />
+
   <style>
     body {
       font-family: 'Tajawal', sans-serif;
@@ -102,50 +107,88 @@
       margin-top: 20px;
       font-weight: bold;
     }
+
+    /* ADDED: فقرة شرح + ملاحظات */
+    .prose p { line-height: 1.8; }
+    .note { background:#f7faf7; border:1px solid #d6ead6; padding:10px; border-radius:8px; font-size:14px; }
   </style>
+
   <!-- Google tag (gtag.js) -->
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
 
-  gtag('config', 'G-D8W8C8PYS9');
-</script>
+    gtag('config', 'G-D8W8C8PYS9');
+  </script>
 
-
+  <!-- ADDED: JSON-LD (WebPage + FAQ) لرفع الموثوقية -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "حاسبة العمر بالهجري والميلادي",
+    "url": "https://as3aralywm.com/age.html",
+    "inLanguage": "ar",
+    "isPartOf": { "@type": "WebSite", "name": "أسعار اليوم السعودية", "url": "https://as3aralywm.com" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [{
+      "@type": "Question",
+      "name": "هل التحويل من الهجري إلى الميلادي دقيق؟",
+      "acceptedAnswer": { "@type": "Answer", "text": "التحويل هنا تقريبي لأغراض حساب العمر فقط. للحصول على دقة أعلى يمكن استخدام تقويم أم القرى أو خدمات تحويل متخصصة." }
+    },{
+      "@type": "Question",
+      "name": "لماذا قد يختلف العمر بالأيام بين التقويمين؟",
+      "acceptedAnswer": { "@type": "Answer", "text": "يختلف طول السنة والشهر بين التقويمين؛ الميلادي شمسي والهجري قمري، مما يسبب فروقًا بسيطة في الحساب بالأيام." }
+    }]
+  }
+  </script>
 </head>
 <body>
   <header>📅 حاسبة العمر</header>
 
-  <div class="top-buttons">
-    <button onclick="location.href='home.html'">🏠 الصفحة الرئيسية</button>
-    <button onclick="toggleDarkMode()">🌙 الوضع الليلي</button>
+  <div class="top-buttons" role="group" aria-label="خيارات سريعة"><!-- ADDED: aria-label -->
+    <button onclick="location.href='home.html'" aria-label="الانتقال إلى الصفحة الرئيسية">🏠 الصفحة الرئيسية</button>
+    <button onclick="toggleDarkMode()" aria-pressed="false" aria-label="تفعيل أو إلغاء الوضع الليلي">🌙 الوضع الليلي</button>
   </div>
 
-  <div class="container">
+  <main class="container" id="main-content"><!-- ADDED: main landmark لأغراض الوصول -->
+    <!-- ADDED: فقرة تعريفية ترفع قيمة المحتوى -->
+    <section class="prose">
+      <h1 style="margin-top:0;">حاسبة العمر بالهجري والميلادي</h1>
+      <p>استخدم هذه الأداة لحساب عمرك بالسنوات والأشهر والأيام بالتقويمين الميلادي والهجري. التحويل الهجري هنا <strong>تقريبي</strong> ومناسب للاستخدامات العامة. إذا كنت تحتاج دقة رسمية (مثل المستندات الحكومية) فاستخدم تقويم أم القرى أو محوّلات معتمدة.</p>
+      <p class="note"><strong>آخر تحديث:</strong> <time datetime="2025-08-22">22 أغسطس 2025</time></p>
+    </section>
+
     <div class="form-group">
       <label for="calendar">نوع التقويم:</label>
-      <select id="calendar" onchange="toggleCalendarFields()">
+      <select id="calendar" onchange="toggleCalendarFields()" aria-describedby="cal-help">
         <option value="gregorian">ميلادي</option>
         <option value="hijri">هجري</option>
       </select>
+      <small id="cal-help" class="note" style="display:block;margin-top:8px;">التقويم الهجري قمري وقد يختلف يوم أو يومان حسب الرؤية.</small><!-- ADDED -->
     </div>
 
     <div id="gregorian-fields" class="form-group">
       <label for="gregorian-date">تاريخ الميلاد (ميلادي):</label>
-      <input type="date" id="gregorian-date" />
+      <input type="date" id="gregorian-date" aria-label="أدخل تاريخ ميلادك بالتقويم الميلادي" />
     </div>
 
     <div id="hijri-fields" style="display:none">
       <div class="form-group">
         <label for="hijri-day">تاريخ الميلاد (هجري):</label>
         <div style="display: flex; gap: 10px;">
-          <select id="hijri-day">
+          <select id="hijri-day" aria-label="اليوم (هجري)">
             <option value="">اليوم</option>
           </select>
-          <select id="hijri-month">
+          <select id="hijri-month" aria-label="الشهر (هجري)">
             <option value="">الشهر</option>
             <option value="1">محرم</option>
             <option value="2">صفر</option>
@@ -160,17 +203,24 @@
             <option value="11">ذو القعدة</option>
             <option value="12">ذو الحجة</option>
           </select>
-          <select id="hijri-year">
+          <select id="hijri-year" aria-label="السنة (هجري)">
             <option value="">السنة</option>
           </select>
         </div>
       </div>
     </div>
 
-    <button class="btn-main" onclick="calculateAge()">📅 احسب عمرك</button>
+    <button class="btn-main" onclick="calculateAge()" aria-label="احسب عمرك الآن">📅 احسب عمرك</button>
 
-    <div class="result" id="result">-</div>
-  </div>
+    <div class="result" id="result" aria-live="polite">-</div>
+
+    <!-- ADDED: أسئلة شائعة مختصرة (تعزز القيمة وتخدم SEO) -->
+    <section class="prose" style="margin-top:24px">
+      <h2>أسئلة شائعة</h2>
+      <p><strong>هل النتيجة نهائية؟</strong> النتيجة تقريبية خصوصًا عند اختيار التقويم الهجري.</p>
+      <p><strong>لماذا قد يظهر فرق أيام عن حاسبات أخرى؟</strong> تختلف الخوارزميات وقواعد التقويم المستخدمة لكل أداة.</p>
+    </section>
+  </main>
 
   <script>
     // تعبئة الأيام 1 - 30
@@ -218,6 +268,13 @@
         birthDate = new Date(approxGregorianYear, m - 1, d);
       }
 
+      // ADDED: منع تواريخ مستقبلية
+      const today = new Date();
+      if (birthDate > today) {
+        alert("تاريخ الميلاد لا يمكن أن يكون في المستقبل.");
+        return;
+      }
+
       const ageInMs = now - birthDate;
       const ageDate = new Date(ageInMs);
 
@@ -230,6 +287,13 @@
 
     function toggleDarkMode() {
       document.body.classList.toggle("dark");
+      // ADDED: تحديث aria-pressed لإمكانية الوصول
+      const btns = document.querySelectorAll('.top-buttons button');
+      btns.forEach(b => {
+        if (b.textContent.includes("الوضع الليلي")) {
+          b.setAttribute('aria-pressed', document.body.classList.contains('dark') ? 'true' : 'false');
+        }
+      });
     }
   </script>
 </body>

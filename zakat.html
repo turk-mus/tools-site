@@ -8,6 +8,18 @@
   <meta name="description" content="احسب زكاة مالك أو ذهبك بسهولة حسب المعايير الشرعية، مع تحديث تلقائي لسعر الذهب.">
   <link href="https://fonts.googleapis.com/css2?family=Tajawal&display=swap" rel="stylesheet">
 
+  <!-- ADDED: SEO أساسي -->
+  <link rel="canonical" href="https://as3aralywm.com/zakat"><!-- ADDED -->
+  <meta name="format-detection" content="telephone=no"><!-- ADDED -->
+  <meta name="theme-color" content="#006c35"><!-- ADDED -->
+  <meta property="og:type" content="article"><!-- ADDED -->
+  <meta property="og:locale" content="ar_SA"><!-- ADDED -->
+  <meta property="og:title" content="حاسبة الزكاة — مال وذهب"><!-- ADDED -->
+  <meta property="og:description" content="حاسبة زكاة دقيقة مع توضيح النصاب والتنبيه الشرعي ومنهجية الحساب."><!-- ADDED -->
+  <meta property="og:url" content="https://as3aralywm.com/zakat"><!-- ADDED -->
+  <meta property="og:image" content="/assets/og-cover.jpg"><!-- ADDED -->
+  <meta name="twitter:card" content="summary_large_image"><!-- ADDED -->
+
   <style>
     body {
       font-family: 'Tajawal', sans-serif;
@@ -45,15 +57,8 @@
       box-shadow: 0 0 10px rgba(255,255,255,0.05);
     }
 
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
 
     select, input {
       width: 100%;
@@ -64,13 +69,7 @@
       background: white;
       color: #000;
     }
-
-    body.dark select,
-    body.dark input {
-      background: #2c2c2c;
-      color: white;
-      border: 1px solid #666;
-    }
+    body.dark select, body.dark input { background: #2c2c2c; color: white; border: 1px solid #666; }
 
     button {
       background-color: #006c35;
@@ -83,30 +82,26 @@
       width: 100%;
       margin-bottom: 10px;
     }
+    button:hover { background-color: #004f27; }
 
-    button:hover {
-      background-color: #004f27;
-    }
+    .result { font-size: 18px; font-weight: bold; text-align: center; margin-top: 20px; }
 
-    .result {
-      font-size: 18px;
-      font-weight: bold;
-      text-align: center;
-      margin-top: 20px;
-    }
+    .footer { text-align: center; margin-top: 30px; font-size: 14px; color: #777; }
 
-    .footer {
-      text-align: center;
-      margin-top: 30px;
-      font-size: 14px;
-      color: #777;
-    }
+    .top-buttons { display: flex; gap: 10px; margin-bottom: 20px; }
 
-    .top-buttons {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
+    /* ADDED: كتل معلومات لزيادة القيمة */
+    .info-card{
+      background:#fff; border:1px solid #eaeaea; border-radius:12px; padding:14px; margin:14px 0;
     }
+    body.dark .info-card{ background:#1e1e1e; border-color:#2b2b2b; }
+    .muted{ color:#777; font-size:13px; }
+    .badge{ display:inline-block; padding:2px 8px; border-radius:999px; background:#eef8f1; color:#176b3a; font-size:12px; border:1px solid #d6f0df; }
+    body.dark .badge{ background:#17352a; color:#a8e5c5; border-color:#295d46; }
+    .faq details{ background:#fafafa; border:1px solid #eee; border-radius:10px; padding:10px 12px; margin:10px 0; }
+    body.dark .faq details{ background:#171717; border-color:#2e2e2e; }
+    .two-col{ display:grid; gap:12px; }
+    @media(min-width:700px){ .two-col{ grid-template-columns:1fr 1fr; } }
   </style>
 
   <!-- Google tag -->
@@ -117,12 +112,46 @@
     gtag('js', new Date());
     gtag('config', 'G-D8W8C8PYS9');
   </script>
+
+  <!-- ADDED: Structured data (Article + FAQ) -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Article",
+    "headline":"حاسبة الزكاة",
+    "inLanguage":"ar",
+    "author":{"@type":"Organization","name":"أسعار اليوم السعودية"},
+    "publisher":{"@type":"Organization","name":"أسعار اليوم السعودية"},
+    "mainEntityOfPage":{"@type":"WebPage","@id":"https://as3aralywm.com/zakat"}
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {"@type":"Question","name":"ما هو نصاب زكاة الذهب؟","acceptedAnswer":{"@type":"Answer","text":"نصاب الذهب 85 غرامًا من ذهب عيار 24. إذا بلغ الذهب هذا المقدار أو قيمته ومرّ عليه الحول، وجبت الزكاة بمقدار 2.5%."}},
+      {"@type":"Question","name":"كيف أحسب زكاة المال؟","acceptedAnswer":{"@type":"Answer","text":"إذا بلغ المال قيمة نصاب الذهب (85 غرام 24) ومرّ عليه الحول، فتُخرج 2.5%."}},
+      {"@type":"Question","name":"هل تشمل الحاسبة المصنعية أو الضريبة؟","acceptedAnswer":{"@type":"Answer","text":"الحساب إرشادي ويستخدم السعر الفوري التقريبي. تختلف المصنعية والضرائب بين المتاجر."}}
+    ]
+  }
+  </script>
 </head>
 
 <body>
   <header>📊 حاسبة الزكاة</header>
 
   <div class="container">
+
+    <!-- ADDED: مقدمة قصيرة تزيد قيمة الصفحة -->
+    <section class="info-card">
+      <div class="badge">معلومة سريعة</div>
+      <p class="muted" style="margin:8px 0 0">
+        تعتمد هذه الحاسبة على نسبة <strong>2.5%</strong> (ربع العشر). نصاب الذهب هو <strong>85g</strong> (عيار 24)،
+        ويُقاس عليه المال كذلك بقيمة ما يعادل 85g من ذهب 24. النتائج إرشادية وليست فتوى.
+      </p>
+    </section>
+    <!-- /ADDED -->
 
     <div class="top-buttons">
       <button onclick="goHome()">🏠 الرئيسية</button>
@@ -168,6 +197,38 @@
     <button onclick="calculateZakat()">📊 احسب الزكاة</button>
     <div class="result" id="result">-</div>
 
+    <!-- ADDED: عرض النصاب تلقائيًا + حالة الوجوب -->
+    <section class="info-card two-col" id="nisabBox" style="display:none"><!-- ADDED -->
+      <div>
+        <strong>النصاب التقديري (قيمة 85g عيار 24):</strong>
+        <div id="nisabValue" class="muted">—</div>
+      </div>
+      <div>
+        <strong>الحالة:</strong>
+        <div id="nisabStatus" class="muted">—</div>
+      </div>
+    </section>
+    <!-- /ADDED -->
+
+    <!-- ADDED: منهجية وتنبيه شرعي وFAQ مختصر -->
+    <section class="info-card">
+      <h3 style="margin:6px 0 8px">منهجية الحساب</h3>
+      <ul class="muted" style="margin:0 0 8px 0; padding-inline-start:20px">
+        <li>زكاة المال: 2.5% من المبلغ إذا بلغ قيمة النصاب ومرّ عليه الحول.</li>
+        <li>زكاة الذهب: وزن الذهب × سعر الغرام (حسب العيار المختار) × 2.5%.</li>
+        <li>يُستند سعر الغرام 24 إلى <code>gold.json</code>، ثم يُحوّل لباقي العيارات بمعامل النقاء.</li>
+      </ul>
+      <div class="muted"><strong>تنبيه:</strong> النتائج إرشادية. يُستحسن الرجوع لأهل العلم في الحالات الخاصة (الديون، العُروض، اختلاط الأموال… إلخ).</div>
+    </section>
+
+    <section class="info-card faq">
+      <h3 style="margin:6px 0 8px">أسئلة شائعة</h3>
+      <details><summary>ما هو النصاب للمال؟</summary><div class="muted">قيمة 85g من ذهب 24. إذا بلغ المال هذا المبلغ ومرّ عليه الحول، تُخرج 2.5%.</div></details>
+      <details><summary>هل أضيف المصنعية؟</summary><div class="muted">المصنعية تختلف بين المتاجر؛ الحاسبة تستخدم السعر الفوري الإرشادي.</div></details>
+      <details><summary>متى تبدأ الحول؟</summary><div class="muted">من يوم بلوغ النصاب. إن نقص المال عن النصاب أثناء الحول فالتفاصيل فيها خلاف؛ يُرجع لأهل العلم.</div></details>
+    </section>
+    <!-- /ADDED -->
+
     <div class="footer">
       المصدر: <code>gold.json</code> (يتم التحديث تلقائيًا)
     </div>
@@ -185,6 +246,16 @@
         const baseInput = document.getElementById("gold-price");
         baseInput.setAttribute("data-base", gramPriceSar.toFixed(2));
         updateAdjustedPrice();
+
+        // ===== ADDED: حساب النصاب وعرضه للمستخدم =====
+        const nisab = gramPriceSar * 85; // 85g عيار 24
+        const nf = new Intl.NumberFormat('ar-SA', { minimumFractionDigits:2, maximumFractionDigits:2 });
+        document.getElementById('nisabValue').textContent = nf.format(nisab) + ' ريال';
+        document.getElementById('nisabBox').style.display = 'grid';
+
+        // تحديد الحالة حسب الاختيار الحالي إن أمكن
+        updateNisabStatus(nisab);
+        // =================================================
       } catch (error) {
         console.log("فشل في تحميل سعر الذهب من gold.json.");
       }
@@ -202,6 +273,10 @@
       document.getElementById("money-fields").style.display = type === "money" ? "block" : "none";
       document.getElementById("gold-fields").style.display = type === "gold" ? "block" : "none";
       document.getElementById("result").textContent = "-";
+
+      // ADDED: حدث حالة النصاب عند التبديل
+      const base = parseFloat(document.getElementById('gold-price').getAttribute('data-base') || 0);
+      if (base) updateNisabStatus(base * 85);
     }
 
     function calculateZakat() {
@@ -218,15 +293,37 @@
       }
 
       document.getElementById("result").textContent = `💸 مقدار الزكاة: ${zakat.toFixed(2)} ريال`;
+
+      // ADDED: بعد الحساب، حدّث حالة النصاب
+      const base = parseFloat(document.getElementById('gold-price').getAttribute('data-base') || 0);
+      if (base) updateNisabStatus(base * 85);
     }
 
-    function goHome() {
-      window.location.href = "home.html";
-    }
+    // ===== ADDED: تحديد حالة الوجوب بشكل إرشادي =====
+    function updateNisabStatus(nisabAmount){
+      const type = document.getElementById('type').value;
+      let reached = false;
 
-    function toggleDarkMode() {
-      document.body.classList.toggle("dark");
+      if (type === 'money') {
+        const money = parseFloat(document.getElementById("money").value || 0);
+        reached = money >= nisabAmount;
+      } else {
+        const weight = parseFloat(document.getElementById("gold-weight").value || 0);
+        // نقارن وزن الذهب × سعر 24 (وليس سعر العيار المختار) ليطابق تعريف النصاب
+        const base = parseFloat(document.getElementById('gold-price').getAttribute('data-base') || 0);
+        const valueAs24 = weight * base; // تقويم الذهب على أساس 24
+        reached = valueAs24 >= nisabAmount;
+      }
+
+      const el = document.getElementById('nisabStatus');
+      el.textContent = reached
+        ? '✅ بلغ النصاب (مع مراعاة حولان الحول).'
+        : 'ℹ️ لم يبلغ النصاب بعد. إذا بلغ ثم مرّ الحول: تُخرج 2.5%.';
     }
+    // ================================================
+
+    function goHome() { window.location.href = "home.html"; }
+    function toggleDarkMode() { document.body.classList.toggle("dark"); }
 
     fetchGoldPrice();
   </script>

@@ -8,6 +8,23 @@
   <!-- ستايل موقعك العام (يظل شغال لكن لن يتعارض) -->
   <link rel="stylesheet" href="styles.css">
 
+  <!-- ADDED: AdSense (إعلانات تلقائية) -->
+  <meta name="google-adsense-account" content="ca-pub-6286972152122784"><!-- ADDED -->
+  <script async crossorigin="anonymous" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6286972152122784"></script><!-- ADDED -->
+
+  <!-- ADDED: SEO أساسي -->
+  <link rel="canonical" href="https://as3aralywm.com/weather"><!-- ADDED -->
+  <meta name="description" content="حالة الطقس الآن في مناطق ومدن السعودية مع درجة الحرارة ووصف الحالة لكل مدينة."><!-- ADDED -->
+  <meta name="format-detection" content="telephone=no"><!-- ADDED -->
+  <meta name="theme-color" content="#0f172a"><!-- ADDED -->
+  <meta property="og:type" content="website"><!-- ADDED -->
+  <meta property="og:locale" content="ar_SA"><!-- ADDED -->
+  <meta property="og:title" content="الطقس في مناطق المملكة — درجات الحرارة الآن"><!-- ADDED -->
+  <meta property="og:description" content="تصفح حالة الطقس في جميع مناطق ومدن السعودية مع تحديث مباشر من Open-Meteo."><!-- ADDED -->
+  <meta property="og:url" content="https://as3aralywm.com/weather"><!-- ADDED -->
+  <meta property="og:image" content="/assets/og-cover.jpg"><!-- ADDED -->
+  <meta name="twitter:card" content="summary_large_image"><!-- ADDED -->
+
   <style>
     /* ====== Weather App Namespace ====== */
     #wx-app { --bg:#0f172a; --text:#e5e7eb; --muted:#9ca3af; --card:#111827; --border:#374151; --accent:#4ade80; }
@@ -65,11 +82,35 @@
     #wx-app { display:block; width:100%; }
   </style>
 
-  <!-- (اختياري) Google Analytics -->
+  <!-- (اختياري) Google Analytics مثل باقي الصفحات -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-D8W8C8PYS9"></script>
   <script>
     window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
     gtag('js', new Date()); gtag('config','G-D8W8C8PYS9');
+  </script>
+
+  <!-- ADDED: Structured Data لرفع جودة الصفحة -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Article",
+    "headline":"الطقس في مناطق السعودية",
+    "inLanguage":"ar",
+    "author":{"@type":"Organization","name":"أسعار اليوم السعودية"},
+    "publisher":{"@type":"Organization","name":"أسعار اليوم السعودية"},
+    "mainEntityOfPage":{"@type":"WebPage","@id":"https://as3aralywm.com/weather"}
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {"@type":"Question","name":"من أين نجلب بيانات الطقس؟","acceptedAnswer":{"@type":"Answer","text":"نستخدم واجهة Open-Meteo العامة لقراءة الطقس الحالي لكل مدينة."}},
+      {"@type":"Question","name":"هل الزمن والتوقيت محلي؟","acceptedAnswer":{"@type":"Answer","text":"نستخدم timezone=auto من Open-Meteo لعرض القيم حسب التوقيت المحلي قدر الإمكان."}},
+      {"@type":"Question","name":"لماذا تختلف الحالة بين التطبيقات؟","acceptedAnswer":{"@type":"Answer","text":"تختلف مصادر النماذج والرصد بين الخدمات؛ نعرض وصفًا عامًّا ودرجة الحرارة الحالية."}}
+    ]
+  }
   </script>
 </head>
 <body>
@@ -84,11 +125,27 @@
         <button id="wx-collapseAll" class="wx-btn">إغلاق الكل</button>
       </div>
 
+      <!-- ADDED: قسم تحليلي بسيط لزيادة قيمة الصفحة -->
+      <section class="wx-region" style="padding:12px;border-radius:14px"><!-- ADDED -->
+        <div class="wx-region-h" style="cursor:default" aria-hidden="true"><!-- ADDED -->
+          <div class="wx-region-title">ملخص سريع</div><!-- ADDED -->
+        </div><!-- ADDED -->
+        <div class="wx-cities" style="display:block;padding:12px"><!-- ADDED -->
+          <p class="wx-muted" style="margin:0">تختلف الأحوال بين السواحل (جدة/ينبع) والداخل (الرياض/حائل) والمرتفعات (أبها/النماص). راقب رموز الحالة والحرارة المذكورة لكل مدينة.</p><!-- ADDED -->
+        </div><!-- ADDED -->
+      </section><!-- ADDED -->
+
       <div id="wx-regions"></div>
 
       <div class="wx-footer">المصدر: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></div>
     </div>
   </div>
+
+  <noscript><!-- ADDED -->
+    <div style="max-width:1200px;margin:12px auto;color:#555;padding:12px">
+      تحتاج هذه الصفحة إلى تمكين JavaScript لجلب حالة الطقس لكل مدينة.
+    </div>
+  </noscript><!-- ADDED -->
 
   <script>
     const WMO = {

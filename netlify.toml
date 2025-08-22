@@ -1,12 +1,122 @@
+############################
+#  إعدادات البناء الحالية  #
+############################
 [build]
   command = "node scripts/fetch-gold.mjs"
-  publish = "."
+  publish = "."   # ← مجلد الموقع النهائي
 
 [functions]
   directory = "netlify/functions"
 
+# جدولة الوظائف (كما هو لديك)
 [functions."trigger-build"]
   schedule = "0 5,12,20 * * *" # ثلاث مرات يوميًا (UTC)
 
 [functions."x-trends-refresh"]
-  schedule = "0 */8 * * *"   # كل 8 ساعات
+  schedule = "0 */8 * * *"     # كل 8 ساعات
+
+#####################################
+#   تحسينات الأداء والكاش الجديدة   #
+#####################################
+
+# رؤوس أمان + أداء
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options    = "nosniff"
+    Referrer-Policy           = "strict-origin-when-cross-origin"
+
+    # ملاحظة مهمة: كنتَ حاظر geolocation بالكامل وهذا يعطّل كرت الطقس.
+    # الآن نسمح به لنفس الأصل فقط.
+    Permissions-Policy        = "geolocation=(self), microphone=(), camera=()"
+
+    # سياسة محتوى متوافقة مع AdSense + gtag + واجهاتك (مرنة وآمنة قدر الإمكان)
+    # إن ضفت مصادر خارجية جديدة (APIs/صور/إطارات)، أضِف نطاقها هنا.
+    Content-Security-Policy   = """
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval'
+                 https://pagead2.googlesyndication.com
+                 https://googleads.g.doubleclick.net
+                 https://www.googletagmanager.com
+                 https://www.google-analytics.com;
+      connect-src 'self'
+                  https://api.open-meteo.com
+                  https://www.google-analytics.com
+                  https://pagead2.googlesyndication.com
+                  https://googleads.g.doubleclick.net
+                  /.netlify/functions
+                  https://api.aladhan.com;
+      img-src 'self' data:
+              https://pagead2.googlesyndication.com
+              https://googleads.g.doubleclick.net
+              https://www.google-analytics.com;
+      frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      upgrade-insecure-requests;
+    """
+
+# HTML: لا كاش طويل (تحديث فوري)
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate, max-age=0"
+
+# JSON/API: كاش قصير + SWR لتحسين السرعة
+[[headers]]
+  for = "/*.json"
+  [headers.values]
+    Cache-Control = "public, max-age=300, stale-while-revalidate=60"
+
+# أصول ثابتة داخل مجلداتك
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/scripts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/styles/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ملفات جذرية مشهورة يجب تخزينها طويلًا إن وُجدت
+[[headers]]
+  for = "/styles.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/scripts/*.mjs"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+#####################################
+#          تحويــلات (Redirects)   #
+#####################################
+
+# www → بدون www
+[[redirects]]
+  from = "https://www.as3aralywm.com/*"
+  to   = "https://as3aralywm.com/:splat"
+  status = 301
+  force  = true
+
+# 404 مخصصة (إن كان لديك 404.html)
+[[redirects]]
+  from = "/*"
+  to   = "/404.html"
+  status = 404
